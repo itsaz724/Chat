@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f4e5f">
+<title>Our Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef2f6;
+    --panel: #ffffff;
+    --ink: #17252d;
+    --muted: #6a7b86;
+    --mine: #1f4e5f;
+    --mine-ink: #ffffff;
+    --theirs: #ffffff;
+    --theirs-ink: #17252d;
+    --line: #d9e1e8;
+    --accent: #f2b544;
+    --accent-ink: #2a1d00;
+    --error: #b3261e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1a20;
+      --panel: #16252d;
+      --ink: #e8eff3;
+      --muted: #8fa3af;
+      --mine: #2f7a92;
+      --mine-ink: #ffffff;
+      --theirs: #1f323c;
+      --theirs-ink: #e8eff3;
+      --line: #263b46;
+      --accent: #f2b544;
+      --accent-ink: #2a1d00;
+      --error: #f2a29c;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .screen { display: none; height: 100%; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* Join screen */
+  #join { justify-content: center; padding: 24px; max-width: 420px; margin: 0 auto; }
+  #join h1 { font-size: 30px; font-weight: 800; margin: 0 0 6px; }
+  #join p { color: var(--muted); margin: 0 0 24px; }
+  label { display: block; font-weight: 600; margin: 14px 0 6px; }
+  input[type="text"] {
+    width: 100%; padding: 14px 16px; font: inherit; color: var(--ink);
+    background: var(--panel); border: 1.5px solid var(--line); border-radius: 12px;
+  }
+  input[type="text"]:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .hint { font-size: 14px; color: var(--muted); margin-top: 6px; }
+  .primary {
+    margin-top: 24px; width: 100%; padding: 14px; font: inherit; font-weight: 800;
+    background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 12px; cursor: pointer;
+  }
+  .error { color: var(--error); font-size: 14px; min-height: 20px; margin-top: 10px; }
+
+  /* Chat screen */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; background: var(--mine); color: var(--mine-ink);
+  }
+  header .title { font-weight: 800; font-size: 18px; }
+  header .sub { font-size: 13px; opacity: .8; }
+  header button {
+    background: transparent; color: inherit; border: 1.5px solid rgba(255,255,255,.5);
+    border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer;
+  }
+  #messages {
+    flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 6px;
+    overscroll-behavior: contain;
+  }
+  .empty { margin: auto; color: var(--muted); text-align: center; max-width: 260px; }
+  .msg { max-width: 80%; padding: 8px 12px; border-radius: 16px; word-wrap: break-word; overflow-wrap: anywhere; }
+  .msg.mine { align-self: flex-end; background: var(--mine); color: var(--mine-ink); border-bottom-right-radius: 4px; }
+  .msg.theirs { align-self: flex-start; background: var(--theirs); color: var(--theirs-ink); border-bottom-left-radius: 4px; border: 1px solid var(--line); }
+  .msg .who { font-size: 12px; font-weight: 800; opacity: .75; margin-bottom: 1px; }
+  .msg .text { white-space: pre-wrap; }
+  .msg .time { font-size: 11px; opacity: .65; text-align: right; margin-top: 2px; }
+  form#composer {
+    display: flex; gap: 8px; padding: 10px 12px; background: var(--panel); border-top: 1px solid var(--line);
+  }
+  form#composer input { flex: 1; }
+  form#composer button {
+    padding: 0 20px; font: inherit; font-weight: 800; background: var(--accent); color: var(--accent-ink);
+    border: 0; border-radius: 12px; cursor: pointer;
+  }
+  #status { font-size: 12px; text-align: center; color: var(--muted); padding: 4px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .msg { animation: pop .12s ease-out; }
+    @keyframes pop { from { transform: scale(.97); opacity: .5; } to { transform: none; opacity: 1; } }
+  }
+</style>
+</head>
+<body>
+
+<section id="join" class="screen">
+  <h1>Our Chat</h1>
+  <p>A private place for two people to talk.</p>
+  <label for="name">Your name</label>
+  <input id="name" type="text" maxlength="20" autocomplete="off" placeholder="e.g. Rahim">
+  <label for="room">Secret room code</label>
+  <input id="room" type="text" maxlength="30" autocomplete="off" autocapitalize="none" placeholder="e.g. blue-mango-47">
+  <div class="hint">Both of you must type the same code. Only people who know it can read the messages.</div>
+  <div class="error" id="joinError"></div>
+  <button class="primary" id="joinBtn" type="button">Start chatting</button>
+</section>
+
+<section id="chat" class="screen">
+  <header>
+    <div>
+      <div class="title">Our Chat</div>
+      <div class="sub" id="whoami"></div>
+    </div>
+    <button id="leaveBtn" type="button">Leave room</button>
+  </header>
+  <div id="status"></div>
+  <div id="messages" aria-live="polite"></div>
+  <form id="composer" autocomplete="off">
+    <input id="text" type="text" maxlength="1000" placeholder="Write a message" autocomplete="off">
+    <button type="submit">Send</button>
+  </form>
+</section>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, push, onChildAdded, query, limitToLast, serverTimestamp, off }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  projectId: "chatapp-9b011",
+  databaseURL: "https://chatapp-9b011-default-rtdb.firebaseio.com"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const $ = (id) => document.getElementById(id);
+const joinScreen = $("join"), chatScreen = $("chat");
+const messagesEl = $("messages");
+
+let me = "", room = "", roomRef = null;
+
+function safeGet(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function safeDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+
+function show(screen) {
+  joinScreen.classList.toggle("active", screen === "join");
+  chatScreen.classList.toggle("active", screen === "chat");
+}
+
+function cleanRoom(s) {
+  // Firebase keys cannot contain . # $ [ ] /
+  return s.trim().toLowerCase().replace(/[.#$\[\]\/\s]+/g, "-");
+}
+
+function fmtTime(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function renderMessage(m) {
+  const empty = messagesEl.querySelector(".empty");
+  if (empty) empty.remove();
+  const mine = m.name === me;
+  const wrap = document.createElement("div");
+  wrap.className = "msg " + (mine ? "mine" : "theirs");
+  if (!mine) {
+    const who = document.createElement("div");
+    who.className = "who";
+    who.textContent = m.name;
+    wrap.appendChild(who);
+  }
+  const t = document.createElement("div");
+  t.className = "text";
+  t.textContent = m.text;
+  wrap.appendChild(t);
+  const time = document.createElement("div");
+  time.className = "time";
+  time.textContent = fmtTime(m.ts);
+  wrap.appendChild(time);
+
+  const nearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 120;
+  messagesEl.appendChild(wrap);
+  if (nearBottom || mine) messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function enterRoom() {
+  show("chat");
+  $("whoami").textContent = "You are " + me;
+  messagesEl.innerHTML = '<div class="empty">No messages yet. Say hello!</div>';
+  $("status").textContent = "";
+  roomRef = ref(db, "rooms/" + room);
+  const q = query(roomRef, limitToLast(200));
+  onChildAdded(q, (snap) => renderMessage(snap.val()), (err) => {
+    $("status").textContent = "Cannot read messages. Check your Firebase rules and internet.";
+    console.error(err);
+  });
+  setTimeout(() => messagesEl.scrollTo(0, messagesEl.scrollHeight), 300);
+}
+
+function leaveRoom() {
+  if (roomRef) off(roomRef);
+  roomRef = null;
+  safeDel("chat.room");
+  show("join");
+}
+
+$("joinBtn").addEventListener("click", () => {
+  const name = $("name").value.trim();
+  const code = cleanRoom($("room").value);
+  if (!name) { $("joinError").textContent = "Please enter your name."; return; }
+  if (code.length < 4) { $("joinError").textContent = "The room code needs at least 4 characters."; return; }
+  $("joinError").textContent = "";
+  me = name; room = code;
+  safeSet("chat.name", me);
+  safeSet("chat.room", room);
+  enterRoom();
+});
+
+$("leaveBtn").addEventListener("click", leaveRoom);
+
+$("composer").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = $("text");
+  const text = input.value.trim();
+  if (!text || !roomRef) return;
+  input.value = "";
+  input.focus();
+  try {
+    await push(roomRef, { name: me, text, ts: serverTimestamp() });
+    $("status").textContent = "";
+  } catch (err) {
+    $("status").textContent = "Message not sent. Check your internet and try again.";
+    input.value = text;
+    console.error(err);
+  }
+});
+
+// Restore previous session
+const savedName = safeGet("chat.name"), savedRoom = safeGet("chat.room");
+$("name").value = savedName;
+if (savedName && savedRoom) { me = savedName; room = savedRoom; enterRoom(); }
+else { show("join"); }
+</script>
+</body>
+</html>
