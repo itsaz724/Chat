@@ -43,6 +43,7 @@
     --accent: #f2b544;
     --accent-ink: #2a1d00;
     --error: #b3261e;
+    --ocol: #c4612a;
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
@@ -275,6 +276,11 @@
   #pvOnce.on { background: var(--accent); color: var(--accent-ink); }
   #onceClose { background: #fff; color: #111; }
   #onceAudio { width: min(300px, 86vw); }
+
+  #helpText { max-width: min(380px, 90vw); white-space: pre-wrap; text-align: left; line-height: 1.5; }
+  #helpOk { background: #fff; color: #111; }
+  .dgout { white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; color: var(--ink); margin: 10px 0 0; }
+  .dgout:empty { display: none; }
 </style>
 </head>
 <body>
@@ -436,6 +442,15 @@
       <div class="hint">Applies to both of you. Every message (and photo or voice) deletes itself from the app and the database after this time. Default is 30 minutes.</div>
     </div>
     <div class="card">
+      <h3>Troubleshoot</h3>
+      <div class="btnrow">
+        <button type="button" class="btn2" id="dgMic">Test microphone</button>
+        <button type="button" class="btn2" id="dgLoc">Test location</button>
+      </div>
+      <pre id="dgOut" class="dgout"></pre>
+      <div class="hint">If voice, calls or live location fail, run these and read the result.</div>
+    </div>
+    <div class="card">
       <h3>App lock</h3>
       <div class="hint" id="lockState"></div>
       <div class="btnrow">
@@ -463,6 +478,12 @@
   <div class="callsub">View once. It cannot be played again.</div>
   <audio id="onceAudio" controls></audio>
   <div class="row"><button id="onceClose" type="button">Close</button></div>
+</div>
+
+<div id="helpBox" class="overlay" hidden>
+  <div class="callname" id="helpTitle"></div>
+  <div class="callsub" id="helpText"></div>
+  <div class="row"><button id="helpOk" type="button">OK</button></div>
 </div>
 
 <script type="module">
@@ -888,14 +909,22 @@ async function startRec() {
   try {
     recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (err) {
-    $("status").textContent = "Please allow the microphone to send voice messages.";
+    micFail(err, "voice");
     return;
   }
   const mime = pickMime();
   const opts = { audioBitsPerSecond: 32000 };
   if (mime) opts.mimeType = mime;
   try { rec = new MediaRecorder(recStream, opts); }
-  catch (err) { rec = new MediaRecorder(recStream); }
+  catch (err) {
+    try { rec = new MediaRecorder(recStream); }
+    catch (err2) {
+      recStream.getTracks().forEach((t) => t.stop());
+      recStream = null; rec = null;
+      showHelp("Voice message", "This browser cannot record audio (" + ((err2 && err2.name) || "error") + "). Try Chrome or Safari.");
+      return;
+    }
+  }
   recChunks = [];
   recSendIt = false;
   rec.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
@@ -958,9 +987,12 @@ const cid = (() => {
   if (!v) { v = Math.random().toString(36).slice(2) + Date.now().toString(36); safeSet("chat.cid", v); }
   return v;
 })();
+const callCid = Math.random().toString(36).slice(2) + Date.now().toString(36); // per page load, so two tabs can call each other
 const ICE = { iceServers: [
   { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" }
+  { urls: "stun:stun1.l.google.com:19302" },
+  { urls: ["turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turn:openrelay.metered.ca:443?transport=tcp"],
+    username: "openrelayproject", credential: "openrelayproject" }
 ] };
 let callPhase = "idle", pc = null, localStream = null, callRef = null;
 let incomingOffer = null, remoteSet = false, callWritten = false;
@@ -981,6 +1013,20 @@ function showCall(phase, who) {
   if (phase === "incoming") { $("callTitle").textContent = who || "Incoming call"; $("callSub").textContent = "is calling you"; }
   if (phase === "connecting") { $("callTitle").textContent = "Connecting..."; $("callSub").textContent = "Please wait"; }
   if (phase === "active") { $("callTitle").textContent = "On call"; }
+}
+
+function unlockAudio() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+  } catch (e) {}
+}
+document.addEventListener("pointerdown", unlockAudio);
+document.addEventListener("keydown", unlockAudio);
+
+function fbErr(e) {
+  const c = (e && (e.code || e.message)) || "error";
+  return /permission/i.test(c) ? "Firebase Rules are blocking calls (permission_denied)." : "Error: " + c;
 }
 
 function ringOnce() {
@@ -1011,7 +1057,7 @@ async function getMic() {
   try {
     return await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
   } catch (e) {
-    note("Please allow the microphone to make calls.");
+    micFail(e, "call");
     return null;
   }
 }
@@ -1093,13 +1139,14 @@ async function startCall() {
     if (callPhase !== "calling" || !pc) return;
     const ld = pc.localDescription;
     await onDisconnect(callRef).remove();
-    await set(callRef, { cid, name: me, state: "ringing", ts: Date.now(), offer: { type: ld.type, sdp: ld.sdp } });
+    await set(callRef, { cid: callCid, name: me, state: "ringing", ts: Date.now(), offer: { type: ld.type, sdp: ld.sdp } });
     if (callPhase !== "calling") { remove(callRef).catch(() => {}); return; }
     callWritten = true;
     noAnswerTimer = setTimeout(() => finishCall("No answer.", true), 45000);
   } catch (err) {
     console.error(err);
-    finishCall("Could not start the call.", true);
+    showHelp("Could not start the call", fbErr(err));
+    finishCall("", true);
   }
 }
 
@@ -1129,7 +1176,8 @@ async function acceptCall() {
     if (!res.committed) finishCall("Call ended.", false);
   } catch (err) {
     console.error(err);
-    finishCall("Could not connect.", true);
+    showHelp("Could not connect", fbErr(err));
+    finishCall("", true);
   }
 }
 
@@ -1143,12 +1191,15 @@ function startCallListener() {
       else if (callPhase === "connecting" || callPhase === "active") finishCall("Call ended.", false);
       return;
     }
-    if (v.cid !== cid) {
+    if (v.cid !== callCid) {
       if (callPhase === "idle" && v.state === "ringing" && v.offer) {
         callPhase = "incoming";
         incomingOffer = v.offer;
         showCall("incoming", v.name);
         startRing();
+        if (document.hidden && window.Notification && Notification.permission === "granted") {
+          try { new Notification((v.name || "Someone") + " is calling you"); } catch (e) {}
+        }
       }
     } else if (callPhase === "calling" && v.answer && pc && !remoteSet) {
       remoteSet = true;
@@ -1162,6 +1213,9 @@ function startCallListener() {
         finishCall("Could not connect.", true);
       }
     }
+  }, (err) => {
+    console.error(err);
+    showHelp("Calls are blocked", fbErr(err) + "\n\nIn Firebase Console > Realtime Database > Rules, allow read/write on rooms.");
   }));
 }
 
@@ -1179,6 +1233,7 @@ $("callMute").addEventListener("click", () => {
 
 /* ---------- Location sharing ---------- */
 let locData = {}, watchId = null, shareUntil = 0, lastWrite = 0, lastPos = null, shareTimer = null, myLocRef = null;
+let locHigh = true, lastSentAt = 0;
 let mapFor = null, mapLast = { lat: 0, lng: 0, t: 0 };
 
 function distM(a, b) {
@@ -1189,7 +1244,7 @@ function distM(a, b) {
 }
 function ago(ts) {
   if (!ts) return "just now";
-  const sec = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  const sec = Math.max(0, Math.round((nowS() - ts) / 1000));
   if (sec < 20) return "just now";
   if (sec < 60) return sec + "s ago";
   return Math.round(sec / 60) + " min ago";
@@ -1201,7 +1256,7 @@ function validPos(v) {
 function renderLocBar() {
   const bar = $("locBar");
   bar.innerHTML = "";
-  const now = Date.now();
+  const now = nowS();
   function row(text, label, fn) {
     const r = document.createElement("div");
     r.className = "lrow";
@@ -1216,7 +1271,7 @@ function renderLocBar() {
   }
   if (watchId !== null) {
     const left = Math.max(1, Math.ceil((shareUntil - now) / 60000));
-    row("\ud83d\udccd You are sharing live location (" + left + " min left)", "Stop", () => stopShare("Stopped sharing location."));
+    row("\ud83d\udccd Sharing live location (" + left + " min left) \u00b7 " + (lastSentAt ? "sent " + ago(lastSentAt) : "waiting for GPS\u2026"), "Stop", () => stopShare("Stopped sharing location."));
   }
   Object.keys(locData).forEach((k) => {
     const v = locData[k];
@@ -1231,9 +1286,10 @@ function closeMap() { mapFor = null; $("locMap").hidden = true; $("mapFrame").re
 function updateMap() {
   if (!mapFor || $("locMap").hidden) return;
   const v = locData[mapFor];
-  if (!validPos(v) || !(v.until > Date.now())) { closeMap(); note("Location sharing ended."); return; }
+  if (!validPos(v) || !(v.until > nowS())) { closeMap(); note("Location sharing ended."); return; }
   $("mapTitle").textContent = (v.name || "Location");
-  $("mapSub").textContent = "Updated " + ago(v.ts) + (v.acc ? " \u00b7 accuracy ~" + v.acc + " m" : "");
+  $("mapSub").textContent = "Updated " + ago(v.ts) + (v.acc ? " \u00b7 accuracy ~" + v.acc + " m" : "") +
+    (typeof v.ts === "number" && nowS() - v.ts > 120000 ? "\nTheir phone may have paused the app (screen off or app in background)." : "");
   $("mapOpen").href = "https://www.google.com/maps?q=" + v.lat + "," + v.lng;
   const now = Date.now();
   const moved = mapLast.t ? distM(mapLast, v) : Infinity;
@@ -1258,37 +1314,57 @@ function startLocListener() {
   renderLocBar();
 }
 
+function startWatch() {
+  return navigator.geolocation.watchPosition(onPos, onPosErr, { enableHighAccuracy: locHigh, maximumAge: 5000, timeout: 20000 });
+}
+function writeLoc() {
+  if (!myLocRef || !lastPos) return;
+  lastWrite = nowS();
+  set(myLocRef, { name: me, lat: lastPos.lat, lng: lastPos.lng, acc: lastPos.acc || 0, ts: serverTimestamp(), until: shareUntil })
+    .then(() => { lastSentAt = nowS(); renderLocBar(); })
+    .catch((e) => { note("Location not sent: " + ((e && (e.code || e.message)) || "error")); });
+}
 function onPos(p) {
-  const now = Date.now();
+  const now = nowS();
   if (now >= shareUntil) { stopShare("Live location sharing ended."); return; }
   const lat = p.coords.latitude, lng = p.coords.longitude;
   const moved = lastPos ? distM(lastPos, { lat, lng }) : Infinity;
   if (now - lastWrite < 5000) return;
   if (moved < 10 && now - lastWrite < 30000) return;
-  lastWrite = now;
-  lastPos = { lat, lng };
-  if (myLocRef) {
-    set(myLocRef, { name: me, lat, lng, acc: Math.round(p.coords.accuracy || 0), ts: serverTimestamp(), until: shareUntil }).catch(() => {});
-  }
+  lastPos = { lat, lng, acc: Math.round(p.coords.accuracy || 0) };
+  writeLoc();
 }
 function onPosErr(err) {
-  if (err && err.code === 1) stopShare("Location permission was denied.");
-  else note("Waiting for GPS signal...");
+  if (err && err.code === 1) {
+    stopShare("");
+    showHelp("Location is blocked", "Allow location for this website: tap the lock icon next to the address, then Permissions, Location, Allow. Then try again.");
+    return;
+  }
+  if (locHigh && watchId !== null) {
+    locHigh = false;
+    navigator.geolocation.clearWatch(watchId);
+    watchId = startWatch();
+    note("GPS is slow. Using network location instead.");
+    return;
+  }
+  note("Waiting for location signal...");
 }
 
 function startShare(mins, label) {
   if (!roomRef) return;
   if (!navigator.geolocation) { note("Location is not supported on this device."); return; }
   if (watchId !== null) stopShare("");
-  shareUntil = Date.now() + mins * 60000;
+  shareUntil = nowS() + mins * 60000;
   myLocRef = ref(db, "rooms/" + room + "~loc/" + cid);
   onDisconnect(myLocRef).remove().catch(() => {});
-  lastWrite = 0; lastPos = null;
-  watchId = navigator.geolocation.watchPosition(onPos, onPosErr, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+  lastWrite = 0; lastPos = null; lastSentAt = 0; locHigh = true;
+  watchId = startWatch();
+  requestWake();
   clearInterval(shareTimer);
   shareTimer = setInterval(() => {
-    if (Date.now() >= shareUntil) stopShare("Live location sharing ended.");
-    else renderLocBar();
+    if (nowS() >= shareUntil) { stopShare("Live location sharing ended."); return; }
+    if (lastPos && nowS() - lastWrite > 30000) writeLoc();
+    renderLocBar();
   }, 15000);
   sendMsg({ text: "\ud83d\udccd Started sharing live location for " + label + ". Tap \ud83d\udccd View at the top to see it." });
   renderLocBar();
@@ -1304,6 +1380,7 @@ function stopShare(msg) {
     remove(r).catch(() => {});
   }
   myLocRef = null; lastPos = null; shareUntil = 0;
+  releaseWake();
   if (was && msg) note(msg);
   renderLocBar();
 }
@@ -1852,14 +1929,14 @@ function startGameListener() {
 function startGame() {
   set(gameRefP(), { x: { cid, name: me }, b: "---------", t: "x", w: "", d: 0 })
     .then(() => sendMsg({ text: "\ud83c\udfae " + me + " wants to play Tic-Tac-Toe!", open: "game" }))
-    .catch(() => note("Could not start the game."));
+    .catch((e) => showHelp("Could not start the game", fbErr(e)));
 }
 function joinGame() {
   runTransaction(gameRefP(), (cur) => {
     if (!cur || cur.o || (cur.x && cur.x.cid === cid)) return;
     cur.o = { cid, name: me };
     return cur;
-  }).catch(() => note("Could not join."));
+  }).catch((e) => showHelp("Could not join", fbErr(e)));
 }
 function endGame() {
   if (game && game.o && !game.w && !confirm("End this game for both of you?")) return;
@@ -1886,7 +1963,7 @@ function moveAt(i) {
       else { const wc = cur[r.w].cid; cur.sc = cur.sc || {}; cur.sc[wc] = (cur.sc[wc] || 0) + 1; }
     } else cur.t = mk === "x" ? "o" : "x";
     return cur;
-  }).catch(() => note("Move failed. Try again."));
+  }).catch((e) => showHelp("Move failed", fbErr(e)));
 }
 function renderGame() {
   if ($("gamePanel").hidden) return;
@@ -2032,6 +2109,101 @@ async function openOnce(key) {
   } else note("Nothing to show.");
 }
 updateOnceUI();
+
+/* ---------- permissions help, screen keep-awake, troubleshooting ---------- */
+function showHelp(title, text) {
+  $("helpTitle").textContent = title;
+  $("helpText").textContent = text;
+  $("helpBox").hidden = false;
+}
+$("helpOk").addEventListener("click", () => { $("helpBox").hidden = true; });
+function inAppBrowser() { return /FBAN|FBAV|FB_IAB|Instagram|Messenger|Line\/|MicroMessenger|Snapchat|TikTok|; wv\)/i.test(navigator.userAgent); }
+function isStandalone() { return window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches); }
+function micErrorText(e) {
+  const n = (e && e.name) || "Error";
+  if (!window.isSecureContext || !navigator.mediaDevices) return "This page is not on https, so the browser blocks the microphone. Open your https website link (not a file).";
+  if (inAppBrowser()) return "You opened this inside another app (Messenger, Facebook, Instagram...). Those apps block the microphone. Open the menu and choose Open in Chrome (or Safari).";
+  if (n === "NotAllowedError" || n === "PermissionDeniedError" || n === "SecurityError") {
+    return "The microphone is blocked for this website.\n\nChrome: tap the lock icon next to the address, then Permissions, Microphone, Allow, then reload.\n\niPhone: Settings, Safari, Microphone, set to Allow or Ask.\n\nAlso check phone Settings, Apps, your browser, Permissions, Microphone." +
+      (isStandalone() ? "\n\nYou are using the home-screen app. Open the website once in Chrome/Safari, allow the microphone there, then try again." : "");
+  }
+  if (n === "NotFoundError" || n === "OverconstrainedError") return "No microphone was found on this device.";
+  if (n === "NotReadableError" || n === "AbortError") return "The microphone is busy. Close other apps that use it (calls, recorders, other tabs), then try again.";
+  return "Microphone error: " + n + (e && e.message ? " - " + e.message : "");
+}
+function micFail(e, kind) {
+  console.error(e);
+  showHelp(kind === "call" ? "Can't start the call" : "Can't use the microphone", micErrorText(e));
+}
+
+let wakeLock = null;
+async function requestWake() {
+  try {
+    if (navigator.wakeLock && !wakeLock) {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => { wakeLock = null; });
+    }
+  } catch (e) {}
+}
+function releaseWake() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
+
+async function permState(name) {
+  try { if (!navigator.permissions) return "unknown"; return (await navigator.permissions.query({ name })).state; }
+  catch (e) { return "unknown"; }
+}
+function envInfo() {
+  return [
+    "https: " + (window.isSecureContext ? "yes" : "NO"),
+    "Inside another app: " + (inAppBrowser() ? "YES (open in Chrome/Safari)" : "no"),
+    "Home-screen app: " + (isStandalone() ? "yes" : "no"),
+    "Recording supported: " + (window.MediaRecorder ? "yes" : "NO"),
+    "Calls supported: " + (window.RTCPeerConnection ? "yes" : "NO"),
+    "Screen keep-awake: " + (navigator.wakeLock ? "yes" : "no")
+  ].join("\n");
+}
+$("dgMic").addEventListener("click", async () => {
+  const out = $("dgOut");
+  out.textContent = "Testing...";
+  let r = envInfo() + "\nMicrophone permission: " + (await permState("microphone")) + "\n";
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    s.getTracks().forEach((t) => t.stop());
+    r += "Microphone: WORKS \u2713";
+  } catch (e) {
+    r += "Microphone: FAILED (" + ((e && e.name) || "error") + ")\n\n" + micErrorText(e);
+  }
+  out.textContent = r;
+});
+$("dgLoc").addEventListener("click", async () => {
+  const out = $("dgOut");
+  let r = envInfo() + "\nLocation permission: " + (await permState("geolocation")) + "\n";
+  out.textContent = r + "Testing location (about 12 seconds)...";
+  if (!navigator.geolocation) { out.textContent = r + "Location: not supported here."; return; }
+  const one = await new Promise((res) => navigator.geolocation.getCurrentPosition(
+    (p) => res("ok, accuracy about " + Math.round(p.coords.accuracy) + " m"),
+    (e) => res("FAILED (code " + e.code + ": " + (e.code === 1 ? "blocked" : e.code === 2 ? "no signal" : "timeout") + ")"),
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }));
+  r += "One-time location: " + one + "\n";
+  out.textContent = r + "Checking live updates...";
+  let n = 0, wid = null;
+  await new Promise((res) => {
+    wid = navigator.geolocation.watchPosition(() => { n++; }, () => {}, { enableHighAccuracy: false, maximumAge: 0, timeout: 10000 });
+    setTimeout(res, 10000);
+  });
+  navigator.geolocation.clearWatch(wid);
+  r += "Live updates received in 10 s: " + n + (n === 0 ? "  (none: this phone/browser is not giving live updates)" : "") + "\n";
+  if (roomRef) {
+    try {
+      const tr = ref(db, "rooms/" + room + "~loc/test-" + cid);
+      await set(tr, { t: Date.now() });
+      await remove(tr);
+      r += "Database write: OK";
+    } catch (e) {
+      r += "Database write: FAILED (" + ((e && (e.code || e.message)) || "error") + ")\nFirebase Rules are blocking the live location data.";
+    }
+  }
+  out.textContent = r;
+});
 
 // Start locked if the person turned the lock on
 if (lockOn()) lkOpen("unlock", "Enter PIN", "");
