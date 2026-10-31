@@ -10,6 +10,25 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<script>
+(function(){
+  var P = [["#1f4e5f","#2f7a92"],["#b03a63","#cf5a85"],["#5b4b9a","#8270cc"],["#2e7d4f","#3f9e68"],["#2f5fb3","#4f82dc"],["#c4612a","#e07b45"]];
+  function g(k){try{return localStorage.getItem(k)||""}catch(e){return ""}}
+  window.__PALETTE = P;
+  window.applyTheme = function(){
+    var mode = g("chat.theme") || "auto";
+    var dark = mode === "dark" || (mode === "auto" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+    var r = document.documentElement;
+    r.setAttribute("data-theme", dark ? "dark" : "light");
+    var i = parseInt(g("chat.color"), 10); if (!(i >= 0 && i < P.length)) i = 0;
+    var c = P[i][dark ? 1 : 0];
+    r.style.setProperty("--mine", c);
+    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", c);
+  };
+  window.applyTheme();
+  if (window.matchMedia) { var mq = matchMedia("(prefers-color-scheme: dark)"); var f = function(){ window.applyTheme(); }; if (mq.addEventListener) mq.addEventListener("change", f); else if (mq.addListener) mq.addListener(f); }
+})();
+</script>
 <style>
   :root {
     --bg: #eef2f6;
@@ -25,21 +44,21 @@
     --accent-ink: #2a1d00;
     --error: #b3261e;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0f1a20;
-      --panel: #16252d;
-      --ink: #e8eff3;
-      --muted: #8fa3af;
-      --mine: #2f7a92;
-      --mine-ink: #ffffff;
-      --theirs: #1f323c;
-      --theirs-ink: #e8eff3;
-      --line: #263b46;
-      --accent: #f2b544;
-      --accent-ink: #2a1d00;
-      --error: #f2a29c;
-    }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1a20;
+    --panel: #16252d;
+    --ink: #e8eff3;
+    --muted: #8fa3af;
+    --mine: #2f7a92;
+    --mine-ink: #ffffff;
+    --theirs: #1f323c;
+    --theirs-ink: #e8eff3;
+    --line: #263b46;
+    --accent: #f2b544;
+    --accent-ink: #2a1d00;
+    --error: #f2a29c;
+    --ocol: #f2b544;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -97,16 +116,165 @@
   form#composer {
     display: flex; gap: 8px; padding: 10px 12px; background: var(--panel); border-top: 1px solid var(--line);
   }
-  form#composer input { flex: 1; }
-  form#composer button {
-    padding: 0 20px; font: inherit; font-weight: 800; background: var(--accent); color: var(--accent-ink);
-    border: 0; border-radius: 12px; cursor: pointer;
+  [hidden] { display: none !important; }
+  form#composer { align-items: center; }
+  form#composer input[type="text"] { flex: 1; min-width: 0; padding: 12px 16px; border-radius: 999px; }
+  .ico {
+    flex: none; width: 40px; height: 40px; font-size: 22px; line-height: 1; padding: 0;
+    background: transparent; border: 0; border-radius: 50%; cursor: pointer; color: var(--ink);
   }
+  #textSendBtn, #micBtn, #recSend {
+    flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer;
+    background: var(--accent); color: var(--accent-ink); font: inherit; font-size: 20px; font-weight: 800;
+  }
+  #emojiPanel {
+    display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; max-height: 210px; overflow-y: auto;
+    padding: 8px; background: var(--panel); border-top: 1px solid var(--line);
+  }
+  #emojiPanel button { font-size: 24px; background: transparent; border: 0; padding: 4px 0; cursor: pointer; border-radius: 8px; }
+  #emojiPanel button:active { background: var(--line); }
+  #recBar {
+    display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--panel);
+    border-top: 1px solid var(--line);
+  }
+  #recBar .grow { flex: 1; display: flex; align-items: center; gap: 8px; font-weight: 800; }
+  .recdot { width: 10px; height: 10px; border-radius: 50%; background: #e53935; }
+  @media (prefers-reduced-motion: no-preference) { .recdot { animation: blink 1s infinite; } @keyframes blink { 50% { opacity: .25; } } }
+  .msg .pic { display: block; width: min(260px, 68vw); height: auto; border-radius: 10px; cursor: zoom-in; margin-bottom: 4px; }
+  .msg audio { display: block; width: min(250px, 66vw); height: 40px; margin-bottom: 4px; }
+  .overlay {
+    position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.88); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px; padding: 16px;
+  }
+  .overlay img { max-width: 100%; max-height: 72vh; border-radius: 8px; }
+  .overlay .row { display: flex; gap: 12px; }
+  .overlay button { padding: 12px 24px; font: inherit; font-weight: 800; border-radius: 12px; border: 0; cursor: pointer; }
+  .callname { font-size: 26px; font-weight: 800; color: #fff; text-align: center; }
+  .callsub { color: #cfd8dc; font-size: 16px; }
+  #locBar { background: var(--accent); color: var(--accent-ink); font-size: 14px; }
+  #locBar .lrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; }
+  #locBar button { background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 999px; padding: 4px 12px; font: inherit; font-weight: 800; cursor: pointer; }
+  #locSheet button, #locMap button, .abtn {
+    background: #fff; color: #111; width: min(320px, 88vw); padding: 14px; border: 0; border-radius: 12px;
+    font: inherit; font-weight: 800; cursor: pointer; text-align: center; text-decoration: none; display: block;
+  }
+  #locMap .row button, #locMap .row .abtn { width: auto; padding: 12px 22px; }
+  #locCancel, #mapClose { background: #c62828 !important; color: #fff !important; }
+  #mapFrame { width: min(560px, 100%); height: 52vh; border: 0; border-radius: 12px; background: #dde; }
+  .msg .locbtn { display: inline-block; margin-bottom: 4px; padding: 8px 12px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font-weight: 800; text-decoration: none; }
+  #callAccept { background: #2e7d32; color: #fff; }
+  #callDecline, #callEnd { background: #c62828; color: #fff; }
+  #callMute { background: #fff; color: #111; }
+  #pvSend { background: var(--accent); color: var(--accent-ink); }
+  #pvCancel, #vwClose { background: #fff; color: #111; }
+  .hbtns { display: flex; gap: 8px; }
   #status { font-size: 12px; text-align: center; color: var(--muted); padding: 4px; }
   @media (prefers-reduced-motion: no-preference) {
     .msg { animation: pop .12s ease-out; }
     @keyframes pop { from { transform: scale(.97); opacity: .5; } to { transform: none; opacity: 1; } }
   }
+
+  /* ---------- v2 additions ---------- */
+  :root { --ocol: #c2410c; }
+  .msg { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .msg .time .tick { margin-left: 3px; letter-spacing: -2px; }
+  .msg .time .tick.seen { color: #8fdcff; opacity: 1; }
+  .rx { display: flex; gap: 3px; margin: 3px 0 0; font-size: 14px; flex-wrap: wrap; }
+  .msg.mine .rx { justify-content: flex-end; }
+  .rx span { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; line-height: 20px; }
+  .rx span.me { border-color: var(--accent); }
+  .openbtn { display: block; margin: 4px 0; padding: 8px 12px; border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 800; cursor: pointer; }
+  #menuBtn { position: relative; font-size: 18px; line-height: 1; padding: 6px 12px; }
+  #menuBtn.badge::after { content: ""; position: absolute; top: -3px; right: -3px; width: 11px; height: 11px; border-radius: 50%; background: #ff5252; border: 2px solid var(--mine); }
+  #menuSheet button { background: #fff; color: #111; width: min(320px, 88vw); padding: 14px; border: 0; border-radius: 12px; font: inherit; font-weight: 800; cursor: pointer; text-align: center; }
+  #leaveBtn { background: #c62828 !important; color: #fff !important; }
+
+  #msgMenuWrap { position: fixed; inset: 0; z-index: 65; background: rgba(0,0,0,.22); }
+  #msgMenu { position: absolute; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 8px 28px rgba(0,0,0,.3); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+  #msgMenu .emo { display: flex; gap: 2px; }
+  #msgMenu .emo button { font-size: 26px; background: transparent; border: 0; border-radius: 50%; width: 42px; height: 42px; cursor: pointer; padding: 0; }
+  #msgMenu .emo button.sel { background: var(--line); }
+  #msgMenu .acts { display: flex; gap: 6px; padding: 0 4px 2px; }
+  #msgMenu .acts button { flex: 1; font: inherit; font-size: 14px; font-weight: 800; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  #msgMenu .acts .del { color: var(--error); }
+
+  .panel { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .phead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 16px; background: var(--mine); color: #fff; font-weight: 800; font-size: 18px; }
+  .phead button { background: transparent; color: inherit; border: 1.5px solid rgba(255,255,255,.5); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+  .pbody { flex: 1; overflow-y: auto; padding: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+  .card h3 { margin: 0 0 10px; font-size: 16px; }
+  .card .hint { margin-top: 8px; }
+  .seg { display: flex; gap: 6px; }
+  .seg button, .btn2 { flex: 1; padding: 10px 8px; font: inherit; font-weight: 800; border-radius: 10px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  .seg button.on { background: var(--mine); border-color: var(--mine); color: #fff; }
+  .btnrow { display: flex; gap: 8px; margin-top: 10px; }
+  .btn2.red { color: var(--error); }
+  .swatchrow { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .swatchrow button { width: 38px; height: 38px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; padding: 0; }
+  .swatchrow button.on { border-color: var(--ink); }
+
+  /* drawing */
+  #drawWrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 8px; }
+  #drawCv { background: #fff; border-radius: 10px; box-shadow: 0 2px 14px rgba(0,0,0,.25); touch-action: none; cursor: crosshair; }
+  #drawTools { padding: 8px 12px 12px; background: var(--panel); border-top: 1px solid var(--line); }
+  .dcolors { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .dcolors button { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--panel); box-shadow: 0 0 0 1.5px var(--line); cursor: pointer; padding: 0; }
+  .dcolors button.on { box-shadow: 0 0 0 3px var(--ink); }
+  .dtrow { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
+  .dtb { padding: 8px 10px; font: inherit; font-size: 14px; font-weight: 800; border-radius: 10px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  .dtb.on { background: var(--mine); border-color: var(--mine); color: #fff; }
+  .dtb.red { color: var(--error); }
+  .dsz { width: 38px; height: 38px; border-radius: 10px; border: 1.5px solid var(--line); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .dsz.on { border-color: var(--ink); background: var(--line); }
+  .dsz i { display: block; border-radius: 50%; background: var(--ink); }
+
+  /* game */
+  .gcenter { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .gscore { color: var(--muted); font-weight: 600; text-align: center; min-height: 22px; }
+  .gstatus { font-size: 20px; font-weight: 800; text-align: center; }
+  .gboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: min(86vw, 340px); }
+  .cell { aspect-ratio: 1; font: inherit; font-size: 48px; font-weight: 800; border-radius: 14px; border: 1.5px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; padding: 0; }
+  .cell:disabled { cursor: default; opacity: 1; }
+  .cell.x { color: var(--mine); }
+  .cell.o { color: var(--ocol); }
+  .cell.win { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .gbtns { display: flex; gap: 8px; }
+  .gbtns .btn2 { flex: none; padding: 12px 20px; }
+
+  /* list */
+  #tdForm { display: flex; gap: 8px; margin-bottom: 12px; }
+  #tdForm input { flex: 1; min-width: 0; }
+  #tdForm button { flex: none; width: 48px; border: 0; border-radius: 12px; background: var(--accent); color: var(--accent-ink); font-size: 22px; font-weight: 800; cursor: pointer; }
+  .tditem { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; }
+  .tditem .ck { flex: none; width: 34px; height: 34px; font-size: 22px; line-height: 1; background: transparent; border: 0; cursor: pointer; padding: 0; }
+  .tditem .tt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .tditem .tt small { display: block; color: var(--muted); font-size: 12px; }
+  .tditem.done .tt span { text-decoration: line-through; color: var(--muted); }
+  .tditem .rm { flex: none; width: 32px; height: 32px; background: transparent; border: 0; color: var(--muted); font-size: 18px; cursor: pointer; }
+
+  /* lock */
+  .lockscreen { position: fixed; inset: 0; z-index: 200; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; }
+  .lk-title { font-size: 24px; font-weight: 800; text-align: center; }
+  .lk-sub { color: var(--muted); min-height: 22px; text-align: center; }
+  .lk-sub.err { color: var(--error); }
+  .dots { display: flex; gap: 16px; margin: 6px 0 10px; }
+  .dots i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--muted); display: block; }
+  .dots i.on { background: var(--ink); border-color: var(--ink); }
+  @media (prefers-reduced-motion: no-preference) { .dots.shake { animation: shake .3s; } @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } } }
+  .keypad { display: grid; grid-template-columns: repeat(3, 76px); gap: 14px; }
+  .keypad button { width: 76px; height: 76px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; font-size: 26px; font-weight: 800; cursor: pointer; padding: 0; }
+  .keypad button.ghost { visibility: hidden; }
+  .lk-links { display: flex; gap: 20px; }
+  .linkbtn { background: transparent; border: 0; color: var(--muted); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 8px; }
+
+  .oncebtn { flex: none; padding: 8px 12px; border-radius: 999px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+  .oncebtn.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  #pvOnce { background: #fff; color: #111; }
+  #pvOnce.on { background: var(--accent); color: var(--accent-ink); }
+  #onceClose { background: #fff; color: #111; }
+  #onceAudio { width: min(300px, 86vw); }
 </style>
 </head>
 <body>
@@ -129,19 +297,177 @@
       <div class="title">Our Chat</div>
       <div class="sub" id="whoami"></div>
     </div>
-    <button id="leaveBtn" type="button">Leave room</button>
+    <div class="hbtns">
+      <button id="callBtn" type="button" aria-label="Voice call">&#128222;</button>
+      <button id="locBtn" type="button" aria-label="Share location">&#128205;</button>
+      <button id="menuBtn" type="button" aria-label="Menu">&#8943;</button>
+    </div>
   </header>
+  <div id="locBar" hidden></div>
   <div id="status"></div>
   <div id="messages" aria-live="polite"></div>
+  <div id="emojiPanel" hidden></div>
+  <div id="recBar" hidden>
+    <button type="button" class="ico" id="recCancel" aria-label="Cancel recording">&#10005;</button>
+    <div class="grow"><span class="recdot"></span><span id="recTime">0:00</span></div>
+    <button type="button" class="oncebtn" id="recOnce">1&#215; Off</button>
+    <button type="button" id="recSend" aria-label="Send voice message">&#10148;</button>
+  </div>
   <form id="composer" autocomplete="off">
+    <button type="button" class="ico" id="emojiBtn" aria-label="Emoji">&#128522;</button>
     <input id="text" type="text" maxlength="1000" placeholder="Write a message" autocomplete="off">
-    <button type="submit">Send</button>
+    <button type="button" class="ico" id="photoBtn" aria-label="Send photo">&#128247;</button>
+    <button type="submit" id="textSendBtn" aria-label="Send" hidden>&#10148;</button>
+    <button type="button" id="micBtn" aria-label="Record voice message">&#127908;</button>
   </form>
+  <input id="photoInput" type="file" accept="image/*" hidden>
 </section>
+
+<div id="locSheet" class="overlay" hidden>
+  <div class="callname">Share location</div>
+  <button id="locOnce" type="button">Send my current location</button>
+  <button id="loc15" type="button">Share live: 15 minutes</button>
+  <button id="loc60" type="button">Share live: 1 hour</button>
+  <button id="loc480" type="button">Share live: 8 hours</button>
+  <button id="locCancel" type="button">Cancel</button>
+</div>
+<div id="locMap" class="overlay" hidden>
+  <div class="callname" id="mapTitle"></div>
+  <iframe id="mapFrame" title="Map" referrerpolicy="no-referrer"></iframe>
+  <div class="callsub" id="mapSub"></div>
+  <div class="row"><a id="mapOpen" class="abtn" target="_blank" rel="noopener noreferrer" href="#">Open in Google Maps</a><button id="mapClose" type="button">Close</button></div>
+</div>
+<div id="call" class="overlay" hidden>
+  <div class="callname" id="callTitle"></div>
+  <div class="callsub" id="callSub"></div>
+  <div class="row">
+    <button id="callMute" type="button">Mute</button>
+    <button id="callDecline" type="button">Decline</button>
+    <button id="callAccept" type="button">Accept</button>
+    <button id="callEnd" type="button">End call</button>
+  </div>
+</div>
+<audio id="remoteAudio" autoplay playsinline style="display:none"></audio>
+
+<div id="preview" class="overlay" hidden>
+  <img id="pvImg" alt="Photo preview">
+  <div class="row"><button id="pvCancel" type="button">Cancel</button><button id="pvOnce" type="button">View once: Off</button><button id="pvSend" type="button">Send photo</button></div>
+</div>
+<div id="viewer" class="overlay" hidden>
+  <img id="vwImg" alt="Photo">
+  <div class="row"><button id="vwClose" type="button">Close</button></div>
+</div>
+
+
+<div id="menuSheet" class="overlay" hidden>
+  <div class="callname">Menu</div>
+  <button id="mnDraw" type="button">&#127912; Drawing board</button>
+  <button id="mnGame" type="button">&#127918; Tic-Tac-Toe</button>
+  <button id="mnTodo" type="button">&#128221; Shared list</button>
+  <button id="mnSettings" type="button">&#9881;&#65039; Settings</button>
+  <button id="mnLock" type="button" hidden>&#128274; Lock now</button>
+  <button id="leaveBtn" type="button">Leave room</button>
+  <button id="mnCancel" type="button">Close</button>
+</div>
+
+<div id="msgMenuWrap" hidden><div id="msgMenu"><div class="emo" id="mmEmo"></div><div class="acts" id="mmActs"></div></div></div>
+
+<div id="drawPanel" class="panel" hidden>
+  <div class="phead"><span>&#127912; Drawing board</span><button id="drawClose" type="button">Close</button></div>
+  <div id="drawWrap"><canvas id="drawCv" width="600" height="800"></canvas></div>
+  <div id="drawTools">
+    <div class="dcolors" id="drawColors"></div>
+    <div class="dtrow">
+      <button type="button" class="dsz" data-s="3" aria-label="Thin"><i style="width:5px;height:5px"></i></button>
+      <button type="button" class="dsz" data-s="7" aria-label="Medium"><i style="width:11px;height:11px"></i></button>
+      <button type="button" class="dsz" data-s="14" aria-label="Thick"><i style="width:18px;height:18px"></i></button>
+      <button type="button" class="dtb" id="drawEraser">Eraser</button>
+      <button type="button" class="dtb" id="drawUndo">Undo</button>
+      <button type="button" class="dtb red" id="drawClear">Clear</button>
+      <button type="button" class="dtb" id="drawCall">&#128227; Invite</button>
+    </div>
+  </div>
+</div>
+
+<div id="gamePanel" class="panel" hidden>
+  <div class="phead"><span>&#127918; Tic-Tac-Toe</span><button id="gameClose" type="button">Close</button></div>
+  <div class="pbody"><div class="gcenter">
+    <div class="gscore" id="gScore"></div>
+    <div class="gstatus" id="gStatus"></div>
+    <div class="gboard" id="gBoard"></div>
+    <div class="gbtns" id="gBtns"></div>
+  </div></div>
+</div>
+
+<div id="todoPanel" class="panel" hidden>
+  <div class="phead"><span>&#128221; Shared list</span><button id="tdClose" type="button">Close</button></div>
+  <div class="pbody">
+    <form id="tdForm" autocomplete="off">
+      <input id="tdInput" type="text" maxlength="120" placeholder="Add an item" autocomplete="off">
+      <button type="submit" aria-label="Add">+</button>
+    </form>
+    <div id="tdList"></div>
+    <div class="hint" id="tdCount"></div>
+    <div class="btnrow"><button type="button" class="btn2 red" id="tdClear">Clear ticked items</button></div>
+  </div>
+</div>
+
+<div id="setPanel" class="panel" hidden>
+  <div class="phead"><span>&#9881;&#65039; Settings</span><button id="setClose" type="button">Close</button></div>
+  <div class="pbody">
+    <div class="card">
+      <h3>Theme</h3>
+      <div class="seg" id="segTheme">
+        <button type="button" data-v="auto">Auto</button>
+        <button type="button" data-v="light">Light</button>
+        <button type="button" data-v="dark">Dark</button>
+      </div>
+      <div class="swatchrow" id="swatches"></div>
+      <div class="hint">Only changes this phone. Each of you can pick your own.</div>
+    </div>
+    <div class="card">
+      <h3>Disappearing messages</h3>
+      <div class="seg" id="segTtl">
+        <button type="button" data-v="0">Off</button>
+        <button type="button" data-v="1800000">30 min</button>
+        <button type="button" data-v="3600000">1 hour</button>
+        <button type="button" data-v="86400000">24 hours</button>
+      </div>
+      <div class="hint">Applies to both of you. Every message (and photo or voice) deletes itself from the app and the database after this time. Default is 30 minutes.</div>
+    </div>
+    <div class="card">
+      <h3>App lock</h3>
+      <div class="hint" id="lockState"></div>
+      <div class="btnrow">
+        <button type="button" class="btn2" id="lkSet">Set PIN</button>
+        <button type="button" class="btn2 red" id="lkOff" hidden>Turn off</button>
+      </div>
+      <div class="hint">Optional and only for this phone. Your partner can keep it off.</div>
+    </div>
+  </div>
+</div>
+
+<div id="lock" class="lockscreen" hidden>
+  <div class="lk-title" id="lkTitle">Enter PIN</div>
+  <div class="lk-sub" id="lkSub"></div>
+  <div class="dots" id="lkDots"><i></i><i></i><i></i><i></i></div>
+  <div class="keypad" id="lkPad"></div>
+  <div class="lk-links">
+    <button type="button" class="linkbtn" id="lkForgot">Forgot PIN?</button>
+    <button type="button" class="linkbtn" id="lkCancel">Cancel</button>
+  </div>
+</div>
+
+<div id="onceVoice" class="overlay" hidden>
+  <div class="callname">&#127908; Voice message</div>
+  <div class="callsub">View once. It cannot be played again.</div>
+  <audio id="onceAudio" controls></audio>
+  <div class="row"><button id="onceClose" type="button">Close</button></div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded, query, limitToLast, serverTimestamp, off }
+import { getDatabase, ref, push, remove, set, get, update, runTransaction, onDisconnect, onValue, onChildAdded, onChildChanged, query, limitToLast, limitToFirst, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
@@ -156,7 +482,7 @@ const $ = (id) => document.getElementById(id);
 const joinScreen = $("join"), chatScreen = $("chat");
 const messagesEl = $("messages");
 
-let me = "", room = "", roomRef = null;
+let me = "", room = "", roomRef = null, unsubs = [];
 
 function safeGet(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
 function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -178,9 +504,70 @@ function fmtTime(ts) {
   return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
-function renderMessage(m) {
-  const empty = messagesEl.querySelector(".empty");
-  if (empty) empty.remove();
+const msgMap = {};
+const EMPTY_HTML = '<div class="empty">No messages yet. Say hello!</div>';
+function ensureEmpty() {
+  if (!messagesEl.querySelector(".msg") && !messagesEl.querySelector(".empty")) messagesEl.innerHTML = EMPTY_HTML;
+}
+function dropMsg(key) {
+  const s = msgMap[key];
+  if (s) { s.el.remove(); delete msgMap[key]; }
+  ensureEmpty();
+}
+function paintTick(s) {
+  if (!s || !s.mine) { if (s) s.tk.textContent = ""; return; }
+  const seen = otherSeen && s.m.ts && otherSeen >= s.m.ts;
+  s.tk.textContent = seen ? "\u2713\u2713" : "\u2713";
+  s.tk.className = "tick" + (seen ? " seen" : "");
+}
+function paintMsg(key) {
+  const s = msgMap[key];
+  if (!s) return;
+  const m = s.m;
+  s.tt.textContent = fmtTime(m.ts);
+  paintLeft(s);
+  s.rx.innerHTML = "";
+  const r = m.rx && typeof m.rx === "object" ? m.rx : {};
+  Object.keys(r).forEach((k) => {
+    if (typeof r[k] !== "string") return;
+    const sp = document.createElement("span");
+    sp.textContent = r[k];
+    if (k === cid) sp.className = "me";
+    s.rx.appendChild(sp);
+  });
+  s.rx.hidden = s.rx.children.length === 0;
+  paintTick(s);
+}
+function updateMessage(key, m) {
+  if (!m) return;
+  if (m.del) { dropMsg(key); return; }
+  const s = msgMap[key];
+  if (!s) { renderMessage(key, m); return; }
+  if (!!s.m.vd !== !!m.vd) {
+    const old = s.el;
+    const wrap = makeBubble(key, m);
+    old.replaceWith(wrap);
+    paintMsg(key);
+    return;
+  }
+  s.m = m;
+  paintMsg(key);
+}
+
+function attachPress(el, key) {
+  let t = null, sx = 0, sy = 0;
+  const cancel = () => { clearTimeout(t); t = null; };
+  el.addEventListener("pointerdown", (e) => {
+    if (e.button) return;
+    sx = e.clientX; sy = e.clientY; cancel();
+    t = setTimeout(() => { t = null; openMsgMenu(key); }, 450);
+  });
+  el.addEventListener("pointermove", (e) => { if (t && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) cancel(); });
+  ["pointerup", "pointercancel", "pointerleave"].forEach((ev) => el.addEventListener(ev, cancel));
+  el.addEventListener("contextmenu", (e) => { e.preventDefault(); cancel(); openMsgMenu(key); });
+}
+
+function makeBubble(key, m) {
   const mine = m.name === me;
   const wrap = document.createElement("div");
   wrap.className = "msg " + (mine ? "mine" : "theirs");
@@ -190,36 +577,134 @@ function renderMessage(m) {
     who.textContent = m.name;
     wrap.appendChild(who);
   }
-  const t = document.createElement("div");
-  t.className = "text";
-  t.textContent = m.text;
-  wrap.appendChild(t);
+  if (m.once) {
+    if (m.vd) {
+      const d = document.createElement("div");
+      d.className = "text";
+      d.style.fontStyle = "italic";
+      d.textContent = "\ud83d\udc41 Opened " + (m.ot === "audio" ? "voice message" : "photo");
+      wrap.appendChild(d);
+    } else if (mine) {
+      const d = document.createElement("div");
+      d.className = "text";
+      d.textContent = (m.ot === "audio" ? "\ud83c\udfa4 Voice message" : "\ud83d\udcf7 Photo") + " \u00b7 view once \u00b7 not opened yet";
+      wrap.appendChild(d);
+    } else {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "openbtn";
+      b.textContent = (m.ot === "audio" ? "\ud83c\udfa4 Tap to play" : "\ud83d\udcf7 Tap to view") + " \u00b7 1 time only";
+      b.addEventListener("click", () => openOnce(key));
+      wrap.appendChild(b);
+    }
+  }
+  if (!m.once && typeof m.img === "string" && m.img.startsWith("data:image/")) {
+    const img = document.createElement("img");
+    img.className = "pic";
+    img.alt = "Photo";
+    if (m.w && m.h) { img.width = m.w; img.height = m.h; }
+    img.src = m.img;
+    img.addEventListener("click", () => openViewer(m.img));
+    wrap.appendChild(img);
+  }
+  if (!m.once && typeof m.audio === "string" && m.audio.startsWith("data:audio/")) {
+    const a = document.createElement("audio");
+    a.controls = true;
+    a.preload = "metadata";
+    a.src = m.audio;
+    wrap.appendChild(a);
+  }
+  if (m.loc && Number.isFinite(m.loc.lat) && Number.isFinite(m.loc.lng) && Math.abs(m.loc.lat) <= 90 && Math.abs(m.loc.lng) <= 180) {
+    const a = document.createElement("a");
+    a.className = "locbtn";
+    a.href = "https://www.google.com/maps?q=" + m.loc.lat + "," + m.loc.lng;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = "\ud83d\udccd Shared location \u2014 open in Maps";
+    wrap.appendChild(a);
+  }
+  if (m.text) {
+    const t = document.createElement("div");
+    t.className = "text";
+    t.textContent = m.text;
+    wrap.appendChild(t);
+  }
+  if (m.open === "draw" || m.open === "game") {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "openbtn";
+    b.textContent = m.open === "draw" ? "\ud83c\udfa8 Open drawing board" : "\ud83c\udfae Play Tic-Tac-Toe";
+    b.addEventListener("click", () => openFeature(m.open));
+    wrap.appendChild(b);
+  }
+  const rx = document.createElement("div");
+  rx.className = "rx";
+  rx.hidden = true;
+  wrap.appendChild(rx);
   const time = document.createElement("div");
   time.className = "time";
-  time.textContent = fmtTime(m.ts);
+  const hg = document.createElement("span"), tt = document.createElement("span"), tk = document.createElement("span");
+  time.appendChild(hg); time.appendChild(tt); time.appendChild(tk);
   wrap.appendChild(time);
+  attachPress(wrap, key);
+  msgMap[key] = { el: wrap, m, rx, hg, tt, tk, mine };
+  return wrap;
+}
 
+function renderMessage(key, m) {
+  if (!m) return;
+  if (m.del) { dropMsg(key); return; }
+  if (msgMap[key]) { updateMessage(key, m); return; }
+  const empty = messagesEl.querySelector(".empty");
+  if (empty) empty.remove();
+  const wrap = makeBubble(key, m);
+  const mine = msgMap[key].mine;
   const nearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 120;
   messagesEl.appendChild(wrap);
+  paintMsg(key);
   if (nearBottom || mine) messagesEl.scrollTop = messagesEl.scrollHeight;
+  if (!mine) markSeen();
 }
 
 function enterRoom() {
   show("chat");
-  $("whoami").textContent = "You are " + me;
-  messagesEl.innerHTML = '<div class="empty">No messages yet. Say hello!</div>';
+  otherTyping = ""; otherSeen = 0;
+  updateSub();
+  messagesEl.innerHTML = EMPTY_HTML;
+  Object.keys(msgMap).forEach((k) => delete msgMap[k]);
   $("status").textContent = "";
   roomRef = ref(db, "rooms/" + room);
-  const q = query(roomRef, limitToLast(200));
-  onChildAdded(q, (snap) => renderMessage(snap.val()), (err) => {
+  const q = query(roomRef, limitToLast(50));
+  unsubs.forEach((u) => u());
+  unsubs = [];
+  unsubs.push(onChildAdded(q, (snap) => renderMessage(snap.key, snap.val()), (err) => {
     $("status").textContent = "Cannot read messages. Check your Firebase rules and internet.";
     console.error(err);
-  });
+  }));
+  unsubs.push(onChildChanged(q, (snap) => updateMessage(snap.key, snap.val())));
+  // When the chat is cleared (by either person), empty the screen
+  let ctlFirst = true;
+  unsubs.push(onValue(ref(db, "rooms/" + room + "~ctl"), () => {
+    if (ctlFirst) { ctlFirst = false; return; }
+    Object.keys(msgMap).forEach((k) => delete msgMap[k]);
+    messagesEl.innerHTML = EMPTY_HTML;
+  }));
+  startCallListener();
+  startLocListener();
+  startExtras();
   setTimeout(() => messagesEl.scrollTo(0, messagesEl.scrollHeight), 300);
 }
 
 function leaveRoom() {
-  if (roomRef) off(roomRef);
+  setTyping(false);
+  closeAllPanels();
+  if (typeof stopShare === "function") stopShare("");
+  if (typeof closeMap === "function") closeMap();
+  if (typeof finishCall === "function") finishCall("", true);
+  if (typeof stopRec === "function") stopRec(false);
+  closeEmoji();
+  unsubs.forEach((u) => u());
+  unsubs = [];
   roomRef = null;
   safeDel("chat.room");
   show("join");
@@ -237,24 +722,1320 @@ $("joinBtn").addEventListener("click", () => {
   enterRoom();
 });
 
-$("leaveBtn").addEventListener("click", leaveRoom);
+$("leaveBtn").addEventListener("click", async () => {
+  $("menuSheet").hidden = true;
+  if (!roomRef) return;
+  if (!confirm("Leaving will DELETE all messages in this room for both of you. This cannot be undone. Leave now?")) return;
+  const r = roomRef;
+  finishCall("", true);
+  try {
+    await set(ref(db, "rooms/" + room + "~ctl"), { ts: Date.now() });
+    await remove(r);
+    await Promise.all(["~draw", "~game", "~seen", "~typing"].map((x) => remove(ref(db, "rooms/" + room + x))));
+  } catch (err) {
+    $("status").textContent = "Could not delete messages. Check your internet and try again.";
+    console.error(err);
+    return;
+  }
+  leaveRoom();
+});
+
+async function sendMsg(extra) {
+  if (!roomRef) return false;
+  try {
+    await push(roomRef, Object.assign({ name: me }, ttlMs > 0 ? { ttl: ttlMs } : {}, extra, { ts: serverTimestamp() }));
+    $("status").textContent = "";
+    return true;
+  } catch (err) {
+    $("status").textContent = "Message not sent. Check your internet and try again.";
+    console.error(err);
+    return false;
+  }
+}
+
+const textInput = $("text");
+
+function updateSendMic() {
+  const has = textInput.value.trim().length > 0;
+  $("textSendBtn").hidden = !has;
+  $("micBtn").hidden = has;
+}
+textInput.addEventListener("input", () => { updateSendMic(); setTyping(textInput.value.trim().length > 0); });
 
 $("composer").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const input = $("text");
-  const text = input.value.trim();
+  const text = textInput.value.trim();
   if (!text || !roomRef) return;
-  input.value = "";
-  input.focus();
+  textInput.value = "";
+  setTyping(false);
+  updateSendMic();
+  textInput.focus();
+  const ok = await sendMsg({ text });
+  if (!ok) { textInput.value = text; updateSendMic(); }
+});
+
+/* ---------- Emoji panel ---------- */
+const EMOJIS = ("😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 🙃 😉 😍 🥰 😘 😗 😙 😚 😋 😛 😜 🤪 😝 🤗 🤭 🤔 🤨 😐 😑 😶 😏 😒 🙄 😬 😌 😔 😪 😴 😷 🤒 🤕 🤢 🤧 🥵 🥶 🥴 😵 🤯 🥳 😎 🤓 😕 😟 🙁 😮 😲 😳 🥺 😦 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 😤 😡 😠 🤬 " +
+  "👍 👎 👌 ✌️ 🤞 🤟 🤘 👏 🙌 🙏 🤝 💪 👋 🤚 ✋ 👊 ✊ 🤲 " +
+  "❤️ 🧡 💛 💚 💙 💜 🖤 🤍 💔 ❣️ 💕 💞 💓 💗 💖 💘 💝 💋 😻 " +
+  "🌹 🌸 🌺 🌻 🌙 ⭐ 🌟 ✨ 🔥 ☀️ 🌈 ☁️ ⚡ " +
+  "🎉 🎂 🎁 🎈 🍕 🍔 🍟 🍫 🍰 ☕ 🍵 🍎 🍉 🍇 🍓 " +
+  "🏠 🚗 ✈️ 📱 💻 📷 🎵 🎧 📚 💡 🕌 🤲 ✅ ❌ ❓ ❗ 💯 👀 🙈").split(" ");
+const panel = $("emojiPanel");
+EMOJIS.forEach((em) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.textContent = em;
+  b.addEventListener("click", () => {
+    const i = textInput.selectionStart ?? textInput.value.length;
+    const j = textInput.selectionEnd ?? i;
+    textInput.value = textInput.value.slice(0, i) + em + textInput.value.slice(j);
+    const pos = i + em.length;
+    try { textInput.setSelectionRange(pos, pos); } catch (e) {}
+    updateSendMic();
+  });
+  panel.appendChild(b);
+});
+function closeEmoji() { panel.hidden = true; }
+$("emojiBtn").addEventListener("click", () => { panel.hidden = !panel.hidden; });
+textInput.addEventListener("focus", closeEmoji);
+
+/* ---------- Photos ---------- */
+let pendingPhoto = null;
+
+function viaImg(file) {
+  return new Promise((res, rej) => {
+    const u = URL.createObjectURL(file);
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = u;
+  });
+}
+async function loadBitmap(file) {
+  if (window.createImageBitmap) {
+    try { return await createImageBitmap(file); } catch (e) {}
+  }
+  return viaImg(file);
+}
+async function compressPhoto(file) {
+  const bmp = await loadBitmap(file);
+  const bw = bmp.naturalWidth || bmp.width, bh = bmp.naturalHeight || bmp.height;
+  const scale = Math.min(1, 960 / Math.max(bw, bh));
+  const w = Math.max(1, Math.round(bw * scale)), h = Math.max(1, Math.round(bh * scale));
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(bmp, 0, 0, w, h);
+  let q = 0.7, url = c.toDataURL("image/jpeg", q);
+  while (url.length > 350000 && q > 0.35) { q -= 0.1; url = c.toDataURL("image/jpeg", q); }
+  return { url, w, h };
+}
+
+$("photoBtn").addEventListener("click", () => { closeEmoji(); graceUntil = Date.now() + 180000; $("photoInput").click(); });
+$("photoInput").addEventListener("change", async () => {
+  const f = $("photoInput").files && $("photoInput").files[0];
+  $("photoInput").value = "";
+  if (!f || !roomRef) return;
+  if (!f.type.startsWith("image/")) { $("status").textContent = "Please choose a photo."; return; }
+  $("status").textContent = "Preparing photo...";
   try {
-    await push(roomRef, { name: me, text, ts: serverTimestamp() });
+    pendingPhoto = await compressPhoto(f);
+    $("pvImg").src = pendingPhoto.url;
+    resetOnce();
+    $("preview").hidden = false;
     $("status").textContent = "";
   } catch (err) {
-    $("status").textContent = "Message not sent. Check your internet and try again.";
-    input.value = text;
+    $("status").textContent = "Could not read that photo.";
     console.error(err);
   }
 });
+$("pvCancel").addEventListener("click", () => { pendingPhoto = null; $("preview").hidden = true; });
+$("pvSend").addEventListener("click", async () => {
+  if (!pendingPhoto) return;
+  const p = pendingPhoto;
+  $("pvSend").disabled = true;
+  $("status").textContent = "Sending photo...";
+  const ok = await sendMsg(Object.assign({ img: p.url, w: p.w, h: p.h }, onceNext ? { once: true, ot: "img" } : {}));
+  $("pvSend").disabled = false;
+  if (ok) { pendingPhoto = null; $("preview").hidden = true; resetOnce(); }
+});
+function openViewer(src) { $("vwImg").src = src; $("viewer").hidden = false; }
+$("vwClose").addEventListener("click", () => { $("viewer").hidden = true; $("vwImg").removeAttribute("src"); });
+$("viewer").addEventListener("click", (e) => { if (e.target === $("viewer")) $("vwClose").click(); });
+
+/* ---------- Voice messages ---------- */
+const MAX_REC_SECONDS = 60;
+let rec = null, recChunks = [], recStream = null, recTimer = null, recStart = 0, recSendIt = false;
+
+function pickMime() {
+  if (!window.MediaRecorder) return "";
+  const list = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac"];
+  for (const t of list) { if (MediaRecorder.isTypeSupported(t)) return t; }
+  return "";
+}
+function fmtDur(sec) { return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
+
+async function startRec() {
+  if (rec) return;
+  if (!window.MediaRecorder || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    $("status").textContent = "Voice messages are not supported in this browser.";
+    return;
+  }
+  closeEmoji();
+  try {
+    recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    $("status").textContent = "Please allow the microphone to send voice messages.";
+    return;
+  }
+  const mime = pickMime();
+  const opts = { audioBitsPerSecond: 32000 };
+  if (mime) opts.mimeType = mime;
+  try { rec = new MediaRecorder(recStream, opts); }
+  catch (err) { rec = new MediaRecorder(recStream); }
+  recChunks = [];
+  recSendIt = false;
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
+  rec.onstop = onRecStop;
+  rec.start();
+  recStart = Date.now();
+  $("recTime").textContent = "0:00";
+  resetOnce();
+  $("recBar").hidden = false;
+  $("composer").hidden = true;
+  recTimer = setInterval(() => {
+    const sec = Math.floor((Date.now() - recStart) / 1000);
+    $("recTime").textContent = fmtDur(sec);
+    if (sec >= MAX_REC_SECONDS) stopRec(true);
+  }, 250);
+}
+
+function stopRec(send) {
+  if (!rec) return;
+  recSendIt = !!send;
+  clearInterval(recTimer);
+  recTimer = null;
+  $("recBar").hidden = true;
+  $("composer").hidden = false;
+  if (rec.state !== "inactive") rec.stop();
+}
+
+async function onRecStop() {
+  const dur = (Date.now() - recStart) / 1000;
+  const mimeFull = (rec && rec.mimeType) || "audio/webm";
+  const mimeBase = mimeFull.split(";")[0] || "audio/webm";
+  const chunks = recChunks;
+  const send = recSendIt;
+  if (recStream) recStream.getTracks().forEach((t) => t.stop());
+  recStream = null; rec = null; recChunks = [];
+  if (!send) { resetOnce(); return; }
+  if (dur < 1) { $("status").textContent = "Voice message too short."; return; }
+  const blob = new Blob(chunks, { type: mimeBase });
+  const url = await new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => res(fr.result);
+    fr.onerror = rej;
+    fr.readAsDataURL(blob);
+  });
+  if (url.length > 2000000) { $("status").textContent = "Voice message too long."; return; }
+  $("status").textContent = "Sending voice message...";
+  await sendMsg(Object.assign({ audio: url, dur: Math.round(dur) }, onceNext ? { once: true, ot: "audio" } : {}));
+  resetOnce();
+}
+
+$("micBtn").addEventListener("click", startRec);
+$("recCancel").addEventListener("click", () => stopRec(false));
+$("recSend").addEventListener("click", () => stopRec(true));
+
+updateSendMic();
+
+/* ---------- Voice calls (WebRTC, signalling through Firebase) ---------- */
+const cid = (() => {
+  let v = safeGet("chat.cid");
+  if (!v) { v = Math.random().toString(36).slice(2) + Date.now().toString(36); safeSet("chat.cid", v); }
+  return v;
+})();
+const ICE = { iceServers: [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" }
+] };
+let callPhase = "idle", pc = null, localStream = null, callRef = null;
+let incomingOffer = null, remoteSet = false, callWritten = false;
+let callTimer = null, ringTimer = null, noAnswerTimer = null, callStartAt = 0, audioCtx = null;
+
+function note(msg) {
+  $("status").textContent = msg;
+  if (msg) setTimeout(() => { if ($("status").textContent === msg) $("status").textContent = ""; }, 7000);
+}
+
+function showCall(phase, who) {
+  $("call").hidden = false;
+  $("callAccept").hidden = phase !== "incoming";
+  $("callDecline").hidden = phase !== "incoming";
+  $("callMute").hidden = phase !== "active";
+  $("callEnd").hidden = phase === "incoming";
+  if (phase === "calling") { $("callTitle").textContent = "Calling..."; $("callSub").textContent = "Waiting for an answer"; }
+  if (phase === "incoming") { $("callTitle").textContent = who || "Incoming call"; $("callSub").textContent = "is calling you"; }
+  if (phase === "connecting") { $("callTitle").textContent = "Connecting..."; $("callSub").textContent = "Please wait"; }
+  if (phase === "active") { $("callTitle").textContent = "On call"; }
+}
+
+function ringOnce() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = 480; g.gain.value = 0.15;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + 0.4);
+  } catch (e) {}
+  if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+}
+function startRing() { stopRing(); ringOnce(); ringTimer = setInterval(ringOnce, 2000); }
+function stopRing() { clearInterval(ringTimer); ringTimer = null; }
+
+function waitIce(conn, ms) {
+  return new Promise((res) => {
+    if (conn.iceGatheringState === "complete") return res();
+    const t = setTimeout(done, ms || 4000);
+    function done() { clearTimeout(t); conn.removeEventListener("icegatheringstatechange", chk); res(); }
+    function chk() { if (conn.iceGatheringState === "complete") done(); }
+    conn.addEventListener("icegatheringstatechange", chk);
+  });
+}
+
+async function getMic() {
+  try {
+    return await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+  } catch (e) {
+    note("Please allow the microphone to make calls.");
+    return null;
+  }
+}
+
+function goActive() {
+  callPhase = "active";
+  stopRing();
+  clearTimeout(noAnswerTimer);
+  callStartAt = Date.now();
+  showCall("active");
+  clearInterval(callTimer);
+  callTimer = setInterval(() => {
+    $("callSub").textContent = fmtDur(Math.floor((Date.now() - callStartAt) / 1000));
+  }, 500);
+  $("callSub").textContent = "0:00";
+}
+
+function finishCall(msg, removeNode) {
+  if (callPhase === "idle") return;
+  callPhase = "idle";
+  stopRing();
+  clearTimeout(noAnswerTimer);
+  clearInterval(callTimer);
+  if (pc) { try { pc.close(); } catch (e) {} pc = null; }
+  if (localStream) { localStream.getTracks().forEach((t) => t.stop()); localStream = null; }
+  $("remoteAudio").srcObject = null;
+  $("call").hidden = true;
+  $("callMute").textContent = "Mute";
+  remoteSet = false; callWritten = false; incomingOffer = null;
+  if (msg) note(msg);
+  if (removeNode && callRef) {
+    const r = callRef;
+    onDisconnect(r).cancel().catch(() => {});
+    remove(r).catch(() => {});
+  }
+}
+
+function makePc(stream) {
+  pc = new RTCPeerConnection(ICE);
+  stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+  pc.ontrack = (e) => {
+    const a = $("remoteAudio");
+    a.srcObject = e.streams[0];
+    a.play().catch(() => {});
+  };
+  pc.onconnectionstatechange = () => {
+    if (!pc) return;
+    const st = pc.connectionState;
+    if (st === "connected" && callPhase !== "active") goActive();
+    else if (st === "failed") finishCall("Could not connect. Try Wi-Fi on one phone.", true);
+    else if (st === "disconnected") {
+      setTimeout(() => { if (pc && pc.connectionState === "disconnected") finishCall("Call lost.", true); }, 6000);
+    }
+  };
+}
+
+async function startCall() {
+  if (!roomRef || callPhase !== "idle") return;
+  if (!window.RTCPeerConnection || !navigator.mediaDevices) { note("Calls are not supported in this browser."); return; }
+  closeEmoji();
+  callRef = ref(db, "rooms/" + room + "~call");
+  try {
+    const existing = (await get(callRef)).val();
+    if (existing && existing.cid && (existing.state === "active" || Date.now() - (existing.ts || 0) < 90000)) {
+      note("Line is busy.");
+      return;
+    }
+  } catch (e) {}
+  const stream = await getMic();
+  if (!stream) return;
+  if (callPhase !== "idle") { stream.getTracks().forEach((t) => t.stop()); return; }
+  callPhase = "calling";
+  localStream = stream;
+  showCall("calling");
+  try {
+    makePc(stream);
+    await pc.setLocalDescription(await pc.createOffer());
+    await waitIce(pc);
+    if (callPhase !== "calling" || !pc) return;
+    const ld = pc.localDescription;
+    await onDisconnect(callRef).remove();
+    await set(callRef, { cid, name: me, state: "ringing", ts: Date.now(), offer: { type: ld.type, sdp: ld.sdp } });
+    if (callPhase !== "calling") { remove(callRef).catch(() => {}); return; }
+    callWritten = true;
+    noAnswerTimer = setTimeout(() => finishCall("No answer.", true), 45000);
+  } catch (err) {
+    console.error(err);
+    finishCall("Could not start the call.", true);
+  }
+}
+
+async function acceptCall() {
+  if (callPhase !== "incoming" || !incomingOffer) return;
+  stopRing();
+  const stream = await getMic();
+  if (!stream) { finishCall("", true); return; }
+  if (callPhase !== "incoming") { stream.getTracks().forEach((t) => t.stop()); return; }
+  callPhase = "connecting";
+  localStream = stream;
+  showCall("connecting");
+  try {
+    makePc(stream);
+    await pc.setRemoteDescription({ type: incomingOffer.type, sdp: incomingOffer.sdp });
+    await pc.setLocalDescription(await pc.createAnswer());
+    await waitIce(pc);
+    if (callPhase !== "connecting" || !pc) return;
+    const ld = pc.localDescription;
+    await onDisconnect(callRef).remove();
+    const res = await runTransaction(callRef, (cur) => {
+      if (!cur) return undefined;
+      cur.state = "active";
+      cur.answer = { type: ld.type, sdp: ld.sdp };
+      return cur;
+    });
+    if (!res.committed) finishCall("Call ended.", false);
+  } catch (err) {
+    console.error(err);
+    finishCall("Could not connect.", true);
+  }
+}
+
+function startCallListener() {
+  callRef = ref(db, "rooms/" + room + "~call");
+  unsubs.push(onValue(callRef, async (snap) => {
+    const v = snap.val();
+    if (!v) {
+      if (callPhase === "incoming") finishCall("Missed call.", false);
+      else if (callPhase === "calling" && callWritten) finishCall("Call declined.", false);
+      else if (callPhase === "connecting" || callPhase === "active") finishCall("Call ended.", false);
+      return;
+    }
+    if (v.cid !== cid) {
+      if (callPhase === "idle" && v.state === "ringing" && v.offer) {
+        callPhase = "incoming";
+        incomingOffer = v.offer;
+        showCall("incoming", v.name);
+        startRing();
+      }
+    } else if (callPhase === "calling" && v.answer && pc && !remoteSet) {
+      remoteSet = true;
+      clearTimeout(noAnswerTimer);
+      callPhase = "connecting";
+      showCall("connecting");
+      try {
+        await pc.setRemoteDescription({ type: v.answer.type, sdp: v.answer.sdp });
+      } catch (err) {
+        console.error(err);
+        finishCall("Could not connect.", true);
+      }
+    }
+  }));
+}
+
+$("callBtn").addEventListener("click", startCall);
+$("callAccept").addEventListener("click", acceptCall);
+$("callDecline").addEventListener("click", () => finishCall("", true));
+$("callEnd").addEventListener("click", () => finishCall("Call ended.", true));
+$("callMute").addEventListener("click", () => {
+  if (!localStream) return;
+  const track = localStream.getAudioTracks()[0];
+  if (!track) return;
+  track.enabled = !track.enabled;
+  $("callMute").textContent = track.enabled ? "Mute" : "Unmute";
+});
+
+/* ---------- Location sharing ---------- */
+let locData = {}, watchId = null, shareUntil = 0, lastWrite = 0, lastPos = null, shareTimer = null, myLocRef = null;
+let mapFor = null, mapLast = { lat: 0, lng: 0, t: 0 };
+
+function distM(a, b) {
+  const R = 6371000, rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+function ago(ts) {
+  if (!ts) return "just now";
+  const sec = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if (sec < 20) return "just now";
+  if (sec < 60) return sec + "s ago";
+  return Math.round(sec / 60) + " min ago";
+}
+function validPos(v) {
+  return v && Number.isFinite(v.lat) && Number.isFinite(v.lng) && Math.abs(v.lat) <= 90 && Math.abs(v.lng) <= 180;
+}
+
+function renderLocBar() {
+  const bar = $("locBar");
+  bar.innerHTML = "";
+  const now = Date.now();
+  function row(text, label, fn) {
+    const r = document.createElement("div");
+    r.className = "lrow";
+    const sp = document.createElement("span");
+    sp.textContent = text;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = label;
+    b.addEventListener("click", fn);
+    r.appendChild(sp); r.appendChild(b);
+    bar.appendChild(r);
+  }
+  if (watchId !== null) {
+    const left = Math.max(1, Math.ceil((shareUntil - now) / 60000));
+    row("\ud83d\udccd You are sharing live location (" + left + " min left)", "Stop", () => stopShare("Stopped sharing location."));
+  }
+  Object.keys(locData).forEach((k) => {
+    const v = locData[k];
+    if (k === cid || !validPos(v) || !(v.until > now)) return;
+    row("\ud83d\udccd " + (v.name || "They") + " is sharing live location \u00b7 " + ago(v.ts), "View", () => openMap(k));
+  });
+  bar.hidden = bar.children.length === 0;
+}
+
+function openMap(k) { mapFor = k; mapLast = { lat: 0, lng: 0, t: 0 }; $("locMap").hidden = false; updateMap(); }
+function closeMap() { mapFor = null; $("locMap").hidden = true; $("mapFrame").removeAttribute("src"); }
+function updateMap() {
+  if (!mapFor || $("locMap").hidden) return;
+  const v = locData[mapFor];
+  if (!validPos(v) || !(v.until > Date.now())) { closeMap(); note("Location sharing ended."); return; }
+  $("mapTitle").textContent = (v.name || "Location");
+  $("mapSub").textContent = "Updated " + ago(v.ts) + (v.acc ? " \u00b7 accuracy ~" + v.acc + " m" : "");
+  $("mapOpen").href = "https://www.google.com/maps?q=" + v.lat + "," + v.lng;
+  const now = Date.now();
+  const moved = mapLast.t ? distM(mapLast, v) : Infinity;
+  if (!mapLast.t || moved > 20 || now - mapLast.t > 30000) {
+    const d = 0.004;
+    $("mapFrame").src = "https://www.openstreetmap.org/export/embed.html?bbox=" +
+      (v.lng - d) + "," + (v.lat - d * 0.7) + "," + (v.lng + d) + "," + (v.lat + d * 0.7) +
+      "&layer=mapnik&marker=" + v.lat + "," + v.lng;
+    mapLast = { lat: v.lat, lng: v.lng, t: now };
+  }
+}
+
+function startLocListener() {
+  locData = {};
+  unsubs.push(onValue(ref(db, "rooms/" + room + "~loc"), (snap) => {
+    locData = snap.val() || {};
+    renderLocBar();
+    updateMap();
+  }));
+  const id = setInterval(() => { renderLocBar(); updateMap(); }, 20000);
+  unsubs.push(() => clearInterval(id));
+  renderLocBar();
+}
+
+function onPos(p) {
+  const now = Date.now();
+  if (now >= shareUntil) { stopShare("Live location sharing ended."); return; }
+  const lat = p.coords.latitude, lng = p.coords.longitude;
+  const moved = lastPos ? distM(lastPos, { lat, lng }) : Infinity;
+  if (now - lastWrite < 5000) return;
+  if (moved < 10 && now - lastWrite < 30000) return;
+  lastWrite = now;
+  lastPos = { lat, lng };
+  if (myLocRef) {
+    set(myLocRef, { name: me, lat, lng, acc: Math.round(p.coords.accuracy || 0), ts: serverTimestamp(), until: shareUntil }).catch(() => {});
+  }
+}
+function onPosErr(err) {
+  if (err && err.code === 1) stopShare("Location permission was denied.");
+  else note("Waiting for GPS signal...");
+}
+
+function startShare(mins, label) {
+  if (!roomRef) return;
+  if (!navigator.geolocation) { note("Location is not supported on this device."); return; }
+  if (watchId !== null) stopShare("");
+  shareUntil = Date.now() + mins * 60000;
+  myLocRef = ref(db, "rooms/" + room + "~loc/" + cid);
+  onDisconnect(myLocRef).remove().catch(() => {});
+  lastWrite = 0; lastPos = null;
+  watchId = navigator.geolocation.watchPosition(onPos, onPosErr, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+  clearInterval(shareTimer);
+  shareTimer = setInterval(() => {
+    if (Date.now() >= shareUntil) stopShare("Live location sharing ended.");
+    else renderLocBar();
+  }, 15000);
+  sendMsg({ text: "\ud83d\udccd Started sharing live location for " + label + ". Tap \ud83d\udccd View at the top to see it." });
+  renderLocBar();
+}
+
+function stopShare(msg) {
+  const was = watchId !== null || myLocRef;
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+  clearInterval(shareTimer); shareTimer = null;
+  if (myLocRef) {
+    const r = myLocRef;
+    onDisconnect(r).cancel().catch(() => {});
+    remove(r).catch(() => {});
+  }
+  myLocRef = null; lastPos = null; shareUntil = 0;
+  if (was && msg) note(msg);
+  renderLocBar();
+}
+
+function sendOnce() {
+  if (!navigator.geolocation) { note("Location is not supported on this device."); return; }
+  note("Getting your location...");
+  navigator.geolocation.getCurrentPosition(async (p) => {
+    const ok = await sendMsg({ loc: { lat: p.coords.latitude, lng: p.coords.longitude } });
+    if (ok) note("");
+  }, (err) => {
+    note(err && err.code === 1 ? "Location permission was denied." : "Could not get your location.");
+  }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 });
+}
+
+$("locBtn").addEventListener("click", () => { closeEmoji(); $("locSheet").hidden = false; });
+$("locCancel").addEventListener("click", () => { $("locSheet").hidden = true; });
+$("locOnce").addEventListener("click", () => { $("locSheet").hidden = true; sendOnce(); });
+$("loc15").addEventListener("click", () => { $("locSheet").hidden = true; startShare(15, "15 minutes"); });
+$("loc60").addEventListener("click", () => { $("locSheet").hidden = true; startShare(60, "1 hour"); });
+$("loc480").addEventListener("click", () => { $("locSheet").hidden = true; startShare(480, "8 hours"); });
+$("mapClose").addEventListener("click", closeMap);
+
+/* =====================================================================
+   v2: reactions, seen/typing, disappearing msgs, theme, app lock,
+       drawing board, tic-tac-toe, shared list
+   ===================================================================== */
+let srvOff = 0, ttlMs = 0, otherSeen = 0, otherTyping = "";
+let typingRefMine = null, lastTypingWrite = 0, typingClearT = null, typingOtherT = null;
+let lastSeenWrite = 0, seenTimer = null;
+let isLocked = false, graceUntil = 0;
+const DEFAULT_TTL = 1800000; // 30 minutes
+let cfgLoaded = false;
+const nowS = () => Date.now() + srvOff;
+
+function ttlLabel(ms) { return ms === 3600000 ? "1 hour" : ms === 86400000 ? "24 hours" : ms ? Math.round(ms / 60000) + " min" : "Off"; }
+function updateSub() {
+  $("whoami").textContent = otherTyping ? otherTyping + " is typing\u2026" : "You are " + me + (ttlMs ? " \u00b7 \u23f3 " + ttlLabel(ttlMs) : "");
+}
+
+/* ---------- typing + seen ---------- */
+function setTyping(on) {
+  if (!roomRef || !typingRefMine) return;
+  if (on) {
+    const now = Date.now();
+    if (now - lastTypingWrite > 2500) { lastTypingWrite = now; set(typingRefMine, { n: me, t: now }).catch(() => {}); }
+    clearTimeout(typingClearT);
+    typingClearT = setTimeout(() => setTyping(false), 4000);
+  } else {
+    clearTimeout(typingClearT);
+    if (lastTypingWrite) { lastTypingWrite = 0; remove(typingRefMine).catch(() => {}); }
+  }
+}
+function markSeen(force) {
+  if (!roomRef || isLocked || document.visibilityState !== "visible" || !chatScreen.classList.contains("active")) return;
+  const now = Date.now();
+  const wait = 1500 - (now - lastSeenWrite);
+  if (!force && wait > 0) {
+    if (!seenTimer) seenTimer = setTimeout(() => { seenTimer = null; markSeen(true); }, wait);
+    return;
+  }
+  lastSeenWrite = now;
+  set(ref(db, "rooms/" + room + "~seen/" + cid), serverTimestamp()).catch(() => {});
+}
+
+/* ---------- disappearing messages (default 30 minutes) ---------- */
+function effTtl(m) { return m.ttl > 0 ? m.ttl : (cfgLoaded ? ttlMs : 0); }
+function fmtLeft(ms) {
+  if (ms <= 0) return "0s";
+  const m = Math.floor(ms / 60000);
+  if (m >= 60) return Math.floor(m / 60) + "h " + (m % 60) + "m";
+  if (m >= 1) return m + "m";
+  return "<1m";
+}
+function paintLeft(s) {
+  const t = effTtl(s.m);
+  s.hg.textContent = t > 0 ? "\u23f3 " + fmtLeft((s.m.ts || nowS()) + t - nowS()) + " \u00b7 " : "";
+}
+function sweep() {
+  if (!roomRef) return;
+  const now = nowS();
+  Object.keys(msgMap).forEach((k) => {
+    const s = msgMap[k], t = effTtl(s.m);
+    if (t > 0 && (s.m.ts || now) + t <= now) {
+      s.el.remove();
+      delete msgMap[k];
+      remove(ref(db, "rooms/" + room + "/" + k)).catch(() => {});
+    } else paintLeft(s);
+  });
+  ensureEmpty();
+}
+// Old messages that are older than the 50 shown on screen: delete the expired ones from the database
+async function cleanupOld() {
+  if (!roomRef || !cfgLoaded || Object.keys(msgMap).length < 50) return;
+  const rr = roomRef;
+  for (let i = 0; i < 5; i++) {
+    let snap;
+    try { snap = await get(query(rr, limitToFirst(30))); } catch (e) { return; }
+    let n = 0, gone = 0;
+    const now = nowS();
+    snap.forEach((c) => {
+      n++;
+      const m = c.val() || {};
+      const t = effTtl(m);
+      if (t > 0 && (m.ts || now) + t <= now) { gone++; remove(c.ref).catch(() => {}); }
+    });
+    if (!n || gone < n) return;
+  }
+}
+async function setTtl(v) {
+  if (!roomRef || v === ttlMs) return;
+  try { await set(ref(db, "rooms/" + room + "~cfg"), { ttl: v, by: me, ts: serverTimestamp() }); }
+  catch (e) { note("Could not change that. Check your internet."); return; }
+  sendMsg({ text: v ? "\u23f3 " + me + " turned on disappearing messages (" + ttlLabel(v) + ")." : "\u23f3 " + me + " turned off disappearing messages." });
+}
+
+function startExtras() {
+  ttlMs = DEFAULT_TTL; cfgLoaded = false; otherSeen = 0; otherTyping = "";
+  unsubs.push(onValue(ref(db, ".info/serverTimeOffset"), (s) => { srvOff = s.val() || 0; }));
+  unsubs.push(onValue(ref(db, "rooms/" + room + "~cfg"), (s) => {
+    const v = s.val() || {};
+    ttlMs = (v.ttl === undefined || v.ttl === null) ? DEFAULT_TTL : (Number(v.ttl) > 0 ? Number(v.ttl) : 0);
+    const first = !cfgLoaded;
+    cfgLoaded = true;
+    updateSub(); renderSettings(); sweep();
+    if (first) setTimeout(cleanupOld, 2000);
+  }));
+  unsubs.push(onValue(ref(db, "rooms/" + room + "~seen"), (s) => {
+    const v = s.val() || {};
+    let best = 0;
+    Object.keys(v).forEach((k) => { if (k !== cid && typeof v[k] === "number" && v[k] > best) best = v[k]; });
+    otherSeen = best;
+    Object.keys(msgMap).forEach((k) => paintTick(msgMap[k]));
+  }));
+  typingRefMine = ref(db, "rooms/" + room + "~typing/" + cid);
+  onDisconnect(typingRefMine).remove().catch(() => {});
+  unsubs.push(onValue(ref(db, "rooms/" + room + "~typing"), (s) => {
+    const v = s.val() || {};
+    let who = "";
+    Object.keys(v).forEach((k) => { if (k !== cid && v[k]) who = v[k].n || "Partner"; });
+    clearTimeout(typingOtherT);
+    otherTyping = who;
+    if (who) typingOtherT = setTimeout(() => { otherTyping = ""; updateSub(); }, 6000);
+    updateSub();
+  }));
+  startGameListener();
+  const id = setInterval(sweep, 10000);
+  unsubs.push(() => clearInterval(id));
+  setTimeout(() => { markSeen(true); }, 1500);
+}
+
+/* ---------- long-press menu: reactions / copy / delete ---------- */
+const RX = ["\u2764\ufe0f", "\ud83d\ude02", "\ud83d\udc4d", "\ud83d\ude2e", "\ud83d\ude22", "\ud83d\ude4f"];
+let mmOpenedAt = 0;
+function closeMsgMenu() { $("msgMenuWrap").hidden = true; }
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); note("Copied."); }
+  catch (e) {
+    const ta = document.createElement("textarea");
+    ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); note("Copied."); } catch (_) { note("Could not copy."); }
+    ta.remove();
+  }
+}
+function openMsgMenu(key) {
+  const s = msgMap[key];
+  if (!s) return;
+  if (navigator.vibrate) navigator.vibrate(15);
+  const emo = $("mmEmo"), acts = $("mmActs");
+  emo.innerHTML = ""; acts.innerHTML = "";
+  const mineRx = s.m.rx && s.m.rx[cid];
+  RX.forEach((e) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = e;
+    if (mineRx === e) b.className = "sel";
+    b.addEventListener("click", () => {
+      closeMsgMenu();
+      const p = ref(db, "rooms/" + room + "/" + key + "/rx/" + cid);
+      (mineRx === e ? remove(p) : set(p, e)).catch(() => note("Could not react."));
+    });
+    emo.appendChild(b);
+  });
+  if (s.m.text) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = "Copy";
+    b.addEventListener("click", () => { closeMsgMenu(); copyText(s.m.text); });
+    acts.appendChild(b);
+  }
+  if (s.mine) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = "Delete"; b.className = "del";
+    b.addEventListener("click", () => {
+      closeMsgMenu();
+      update(ref(db, "rooms/" + room + "/" + key), { del: true, text: null, img: null, audio: null, loc: null, rx: null, w: null, h: null, dur: null, open: null })
+        .catch(() => note("Could not delete."));
+    });
+    acts.appendChild(b);
+  }
+  acts.hidden = acts.children.length === 0;
+  const wrap = $("msgMenuWrap"), menu = $("msgMenu");
+  wrap.hidden = false;
+  mmOpenedAt = Date.now();
+  const r = s.el.getBoundingClientRect();
+  const mh = menu.offsetHeight, mw = menu.offsetWidth;
+  let top = r.top - mh - 8;
+  if (top < 8) top = Math.min(r.bottom + 8, window.innerHeight - mh - 8);
+  let left = s.mine ? r.right - mw : r.left;
+  left = Math.max(8, Math.min(left, window.innerWidth - mw - 8));
+  menu.style.top = Math.max(8, top) + "px";
+  menu.style.left = left + "px";
+}
+$("msgMenuWrap").addEventListener("click", (e) => { if (e.target === $("msgMenuWrap") && Date.now() - mmOpenedAt > 350) closeMsgMenu(); });
+
+/* ---------- menu + panels ---------- */
+function openPanel(id) { closeEmoji(); $("menuSheet").hidden = true; $(id).hidden = false; }
+function closeAllPanels() {
+  closeDraw(); closeTodo();
+  $("gamePanel").hidden = true; $("setPanel").hidden = true;
+  $("menuSheet").hidden = true; closeMsgMenu(); closeOnceVoice();
+}
+function openFeature(n) { if (n === "draw") openDraw(); else if (n === "game") openGame(); }
+$("menuBtn").addEventListener("click", () => { closeEmoji(); renderSettings(); $("menuSheet").hidden = false; });
+$("mnCancel").addEventListener("click", () => { $("menuSheet").hidden = true; });
+$("mnDraw").addEventListener("click", openDraw);
+$("mnGame").addEventListener("click", openGame);
+$("mnTodo").addEventListener("click", openTodo);
+$("mnSettings").addEventListener("click", () => { openPanel("setPanel"); renderSettings(); });
+$("mnLock").addEventListener("click", () => { $("menuSheet").hidden = true; if (lockOn()) lkOpen("unlock", "Enter PIN", ""); });
+$("setClose").addEventListener("click", () => { $("setPanel").hidden = true; });
+
+/* ---------- settings: theme / ttl ---------- */
+const swWrap = $("swatches");
+window.__PALETTE.forEach((p, i) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.style.background = p[0]; b.setAttribute("aria-label", "Colour " + (i + 1));
+  b.addEventListener("click", () => { safeSet("chat.color", String(i)); window.applyTheme(); renderSettings(); });
+  swWrap.appendChild(b);
+});
+document.querySelectorAll("#segTheme button").forEach((b) => b.addEventListener("click", () => {
+  safeSet("chat.theme", b.dataset.v); window.applyTheme(); renderSettings();
+}));
+document.querySelectorAll("#segTtl button").forEach((b) => b.addEventListener("click", () => setTtl(Number(b.dataset.v))));
+function renderSettings() {
+  const theme = safeGet("chat.theme") || "auto";
+  document.querySelectorAll("#segTheme button").forEach((b) => b.classList.toggle("on", b.dataset.v === theme));
+  let ci = parseInt(safeGet("chat.color"), 10); if (!(ci >= 0 && ci < window.__PALETTE.length)) ci = 0;
+  Array.from(swWrap.children).forEach((b, i) => b.classList.toggle("on", i === ci));
+  document.querySelectorAll("#segTtl button").forEach((b) => b.classList.toggle("on", Number(b.dataset.v) === ttlMs));
+  $("lockState").textContent = lockOn() ? "App lock is ON for this phone." : "App lock is OFF.";
+  $("lkSet").textContent = lockOn() ? "Change PIN" : "Set PIN";
+  $("lkOff").hidden = !lockOn();
+  $("mnLock").hidden = !lockOn();
+}
+
+/* ---------- app lock (optional, per phone) ---------- */
+const PIN_H = "chat.pinh", PIN_S = "chat.pins";
+let lkMode = "", lkEntry = "", lkNew = "", lkFails = 0, lkUntil = 0, hiddenAt = 0;
+function lockOn() { return !!safeGet(PIN_H); }
+async function hashPin(pin, salt) {
+  const s = salt + ":" + pin;
+  try {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch (e) {
+    let h = 5381;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return "f" + h;
+  }
+}
+function lkRender() {
+  Array.from($("lkDots").children).forEach((d, i) => d.classList.toggle("on", i < lkEntry.length));
+}
+function lkMsg(t, err) { $("lkSub").textContent = t || ""; $("lkSub").className = "lk-sub" + (err ? " err" : ""); }
+function lkOpen(mode, title, sub) {
+  lkMode = mode; lkEntry = "";
+  $("lkTitle").textContent = title;
+  lkMsg(sub, false);
+  $("lkForgot").hidden = mode !== "unlock";
+  $("lkCancel").hidden = mode === "unlock";
+  lkRender();
+  $("lock").hidden = false;
+  if (mode === "unlock") { isLocked = true; closeMsgMenu(); }
+}
+function lkClose() { $("lock").hidden = true; isLocked = false; lkEntry = ""; }
+function lkWrong(text) {
+  const d = $("lkDots");
+  d.classList.remove("shake"); void d.offsetWidth; d.classList.add("shake");
+  lkEntry = ""; lkRender(); lkMsg(text, true);
+}
+function lkKey(d) {
+  if (lkUntil > Date.now()) return;
+  if (lkEntry.length >= 4) return;
+  lkEntry += d; lkRender();
+  if (lkEntry.length === 4) setTimeout(lkDone, 120);
+}
+async function lkDone() {
+  const pin = lkEntry;
+  if (pin.length !== 4) return;
+  if (lkMode === "set1") { lkNew = pin; lkOpen("set2", "Confirm PIN", "Enter the same PIN again"); return; }
+  if (lkMode === "set2") {
+    if (pin !== lkNew) { lkOpen("set1", "Set a PIN", "The PINs did not match. Try again."); return; }
+    const salt = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    safeSet(PIN_S, salt); safeSet(PIN_H, await hashPin(pin, salt));
+    lkClose(); renderSettings(); note("App lock is on.");
+    return;
+  }
+  const ok = (await hashPin(pin, safeGet(PIN_S))) === safeGet(PIN_H);
+  if (!ok) {
+    lkFails++;
+    if (lkFails >= 5) {
+      lkFails = 0; lkUntil = Date.now() + 30000;
+      lkWrong("Too many tries. Wait 30 seconds.");
+      setTimeout(() => { if ($("lkSub").textContent.startsWith("Too many")) lkMsg("", false); }, 30000);
+    } else lkWrong("Wrong PIN");
+    return;
+  }
+  lkFails = 0;
+  if (lkMode === "unlock") { lkClose(); markSeen(true); }
+  else if (lkMode === "verifyOff") { safeDel(PIN_H); safeDel(PIN_S); lkClose(); renderSettings(); note("App lock turned off."); }
+  else if (lkMode === "verifyChange") { lkOpen("set1", "New PIN", "Choose a 4-digit PIN"); }
+}
+(function buildPad() {
+  const pad = $("lkPad");
+  ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "\u232b"].forEach((k) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    if (!k) { b.className = "ghost"; b.disabled = true; }
+    else {
+      b.textContent = k;
+      b.addEventListener("click", () => {
+        if (k === "\u232b") { lkEntry = lkEntry.slice(0, -1); lkRender(); } else lkKey(k);
+      });
+    }
+    pad.appendChild(b);
+  });
+})();
+document.addEventListener("keydown", (e) => {
+  if ($("lock").hidden) return;
+  if (/^[0-9]$/.test(e.key)) lkKey(e.key);
+  else if (e.key === "Backspace") { lkEntry = lkEntry.slice(0, -1); lkRender(); }
+});
+$("lkCancel").addEventListener("click", lkClose);
+$("lkForgot").addEventListener("click", () => {
+  if (!confirm("Forgot your PIN? This turns the lock off and signs you out on this phone. You will need your name and the room code again. Continue?")) return;
+  safeDel(PIN_H); safeDel(PIN_S); safeDel("chat.room");
+  location.reload();
+});
+$("lkSet").addEventListener("click", () => {
+  if (lockOn()) lkOpen("verifyChange", "Enter current PIN", "");
+  else lkOpen("set1", "Set a PIN", "Choose a 4-digit PIN");
+});
+$("lkOff").addEventListener("click", () => lkOpen("verifyOff", "Enter PIN to turn off", ""));
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") { hiddenAt = Date.now(); return; }
+  if (lockOn() && !isLocked && hiddenAt && Date.now() - hiddenAt > 30000 && Date.now() > graceUntil) lkOpen("unlock", "Enter PIN", "");
+  hiddenAt = 0;
+  markSeen();
+});
+window.addEventListener("focus", () => markSeen());
+
+/* ---------- shared drawing board ---------- */
+const DW = 600, DH = 800;
+const dcv = $("drawCv"), dctx = dcv.getContext("2d");
+const DCOLORS = ["#111111", "#e53935", "#fb8c00", "#fdd835", "#43a047", "#1e88e5", "#8e24aa", "#ec407a"];
+let dStrokes = {}, dColor = DCOLORS[0], dSize = 7, dEraser = false, dUnsub = null;
+let dCur = null, dPts = [], dLastSend = 0, dSendT = null, dActive = false, dPending = false, dMine = [];
+const strokesPath = () => "rooms/" + room + "~draw/strokes";
+
+function fitCanvas() {
+  const w = $("drawWrap");
+  const aw = w.clientWidth - 16, ah = w.clientHeight - 16;
+  if (aw <= 0 || ah <= 0) return;
+  let cw = aw, ch = cw * 4 / 3;
+  if (ch > ah) { ch = ah; cw = ch * 3 / 4; }
+  dcv.style.width = Math.floor(cw) + "px";
+  dcv.style.height = Math.floor(ch) + "px";
+}
+window.addEventListener("resize", fitCanvas);
+function parsePts(p) {
+  if (typeof p !== "string" || !p) return [];
+  const out = [];
+  p.split(" ").forEach((s) => {
+    const a = s.split(","), x = +a[0], y = +a[1];
+    if (Number.isFinite(x) && Number.isFinite(y)) out.push([x, y]);
+  });
+  return out;
+}
+function paintStroke(s) {
+  const pts = parsePts(s.p);
+  if (!pts.length) return;
+  dctx.strokeStyle = s.e ? "#ffffff" : (typeof s.c === "string" && /^#[0-9a-f]{6}$/i.test(s.c) ? s.c : "#111111");
+  dctx.lineWidth = Math.min(60, Math.max(1, +s.w || 4));
+  dctx.lineCap = "round"; dctx.lineJoin = "round";
+  dctx.beginPath();
+  dctx.moveTo(pts[0][0], pts[0][1]);
+  if (pts.length === 1) dctx.lineTo(pts[0][0] + 0.01, pts[0][1]);
+  else for (let i = 1; i < pts.length; i++) dctx.lineTo(pts[i][0], pts[i][1]);
+  dctx.stroke();
+}
+function redrawAll() {
+  dctx.fillStyle = "#ffffff";
+  dctx.fillRect(0, 0, DW, DH);
+  Object.keys(dStrokes).sort().forEach((k) => paintStroke(dStrokes[k]));
+}
+function paintSeg(a, b) {
+  dctx.strokeStyle = dEraser ? "#ffffff" : dColor;
+  dctx.lineWidth = dEraser ? dSize * 3 : dSize;
+  dctx.lineCap = "round"; dctx.lineJoin = "round";
+  dctx.beginPath(); dctx.moveTo(a[0], a[1]); dctx.lineTo(b[0] + (a[0] === b[0] && a[1] === b[1] ? 0.01 : 0), b[1]); dctx.stroke();
+}
+function ptsStr() { return dPts.map((p) => p[0] + "," + p[1]).join(" "); }
+function dFlush() {
+  dSendT = null; dLastSend = Date.now();
+  if (!dCur) return;
+  set(ref(db, strokesPath() + "/" + dCur.key + "/p"), ptsStr()).catch(() => {});
+}
+function dSchedule() {
+  if (dSendT) return;
+  dSendT = setTimeout(dFlush, Math.max(0, 120 - (Date.now() - dLastSend)));
+}
+function dBegin(pt) {
+  const keys = Object.keys(dStrokes).sort();
+  if (keys.length > 400) remove(ref(db, strokesPath() + "/" + keys[0])).catch(() => {});
+  const r = push(ref(db, strokesPath()));
+  dCur = r; dPts = [pt];
+  dMine.push(r.key);
+  set(r, { c: dColor, w: dEraser ? dSize * 3 : dSize, e: dEraser ? 1 : 0, by: cid, p: ptsStr() }).catch(() => {});
+  dLastSend = Date.now();
+  paintSeg(pt, pt);
+}
+function dEnd() {
+  if (!dActive) return;
+  dActive = false;
+  if (dSendT) { clearTimeout(dSendT); dSendT = null; }
+  if (dCur) { dFlush(); dCur = null; }
+  if (dPending) { dPending = false; redrawAll(); }
+}
+function ptFrom(e) {
+  const r = dcv.getBoundingClientRect();
+  return [Math.max(0, Math.min(DW, Math.round((e.clientX - r.left) / r.width * DW))), Math.max(0, Math.min(DH, Math.round((e.clientY - r.top) / r.height * DH)))];
+}
+dcv.addEventListener("pointerdown", (e) => {
+  if (!roomRef || e.button) return;
+  e.preventDefault();
+  try { dcv.setPointerCapture(e.pointerId); } catch (_) {}
+  dActive = true;
+  dBegin(ptFrom(e));
+});
+dcv.addEventListener("pointermove", (e) => {
+  if (!dActive || !dCur) return;
+  e.preventDefault();
+  const p = ptFrom(e), last = dPts[dPts.length - 1];
+  if (Math.abs(p[0] - last[0]) < 2 && Math.abs(p[1] - last[1]) < 2) return;
+  dPts.push(p);
+  paintSeg(last, p);
+  if (dPts.length >= 1200) { if (dSendT) { clearTimeout(dSendT); dSendT = null; } dFlush(); dBegin(p); }
+  else dSchedule();
+});
+["pointerup", "pointercancel"].forEach((ev) => dcv.addEventListener(ev, dEnd));
+
+function paintTools() {
+  Array.from($("drawColors").children).forEach((b, i) => b.classList.toggle("on", !dEraser && DCOLORS[i] === dColor));
+  document.querySelectorAll(".dsz").forEach((b) => b.classList.toggle("on", Number(b.dataset.s) === dSize));
+  $("drawEraser").classList.toggle("on", dEraser);
+}
+DCOLORS.forEach((c, i) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.style.background = c; b.setAttribute("aria-label", "Colour " + (i + 1));
+  b.addEventListener("click", () => { dColor = c; dEraser = false; paintTools(); });
+  $("drawColors").appendChild(b);
+});
+document.querySelectorAll(".dsz").forEach((b) => b.addEventListener("click", () => { dSize = Number(b.dataset.s); paintTools(); }));
+$("drawEraser").addEventListener("click", () => { dEraser = !dEraser; paintTools(); });
+$("drawUndo").addEventListener("click", () => {
+  const k = dMine.pop();
+  if (k) remove(ref(db, strokesPath() + "/" + k)).catch(() => {});
+});
+$("drawClear").addEventListener("click", () => {
+  if (!confirm("Clear the whole drawing for both of you?")) return;
+  dMine = [];
+  remove(ref(db, strokesPath())).catch(() => note("Could not clear."));
+});
+$("drawCall").addEventListener("click", async () => {
+  const ok = await sendMsg({ text: "\ud83c\udfa8 " + me + " is drawing. Join in!", open: "draw" });
+  if (ok) note("Invite sent in chat.");
+});
+function openDraw() {
+  if (!roomRef) return;
+  openPanel("drawPanel");
+  paintTools();
+  requestAnimationFrame(() => { fitCanvas(); redrawAll(); });
+  if (!dUnsub) {
+    dUnsub = onValue(ref(db, strokesPath()), (snap) => {
+      dStrokes = snap.val() || {};
+      if (dActive) dPending = true; else redrawAll();
+    });
+  }
+}
+function closeDraw() {
+  dEnd();
+  $("drawPanel").hidden = true;
+  if (dUnsub) { dUnsub(); dUnsub = null; }
+  dStrokes = {}; dMine = [];
+}
+$("drawClose").addEventListener("click", closeDraw);
+
+/* ---------- Tic-Tac-Toe ---------- */
+const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+let game = null, gFirst = true, gUnseen = false;
+const gameRefP = () => ref(db, "rooms/" + room + "~game");
+function calcBoard(b) {
+  for (const L of LINES) if (b[L[0]] !== "-" && b[L[0]] === b[L[1]] && b[L[0]] === b[L[2]]) return { w: b[L[0]], line: L };
+  return b.includes("-") ? null : { w: "d", line: [] };
+}
+function gMark() {
+  if (!game || !game.x) return "";
+  if (game.x.cid === cid) return "x";
+  if (game.o && game.o.cid === cid) return "o";
+  return "";
+}
+function updateBadge() { $("menuBtn").classList.toggle("badge", gUnseen); }
+function startGameListener() {
+  game = null; gFirst = true; gUnseen = false; updateBadge();
+  unsubs.push(onValue(gameRefP(), (snap) => {
+    const prev = game;
+    game = snap.val();
+    const open = !$("gamePanel").hidden;
+    if (game && !open) {
+      const changed = !prev || prev.b !== game.b || prev.w !== game.w || (!!prev.o !== !!game.o);
+      const myTurn = !!game.o && !game.w && game.t === gMark();
+      if (gFirst) { if (myTurn) gUnseen = true; }
+      else if (changed) {
+        gUnseen = true;
+        if (game.w === "d") note("\ud83c\udfae Tic-Tac-Toe: it's a draw!");
+        else if (game.w) note("\ud83c\udfae Tic-Tac-Toe: round finished.");
+        else if (myTurn) note("\ud83c\udfae Your turn in Tic-Tac-Toe!");
+      }
+    }
+    gFirst = false;
+    if (!game || open) gUnseen = false;
+    updateBadge();
+    renderGame();
+  }));
+}
+function startGame() {
+  set(gameRefP(), { x: { cid, name: me }, b: "---------", t: "x", w: "", d: 0 })
+    .then(() => sendMsg({ text: "\ud83c\udfae " + me + " wants to play Tic-Tac-Toe!", open: "game" }))
+    .catch(() => note("Could not start the game."));
+}
+function joinGame() {
+  runTransaction(gameRefP(), (cur) => {
+    if (!cur || cur.o || (cur.x && cur.x.cid === cid)) return;
+    cur.o = { cid, name: me };
+    return cur;
+  }).catch(() => note("Could not join."));
+}
+function endGame() {
+  if (game && game.o && !game.w && !confirm("End this game for both of you?")) return;
+  remove(gameRefP()).catch(() => note("Could not end the game."));
+}
+function playAgain() {
+  runTransaction(gameRefP(), (cur) => {
+    if (!cur || !cur.w || !cur.o) return;
+    const x = cur.x; cur.x = cur.o; cur.o = x;
+    cur.b = "---------"; cur.t = "x"; cur.w = "";
+    return cur;
+  }).catch(() => note("Could not restart."));
+}
+function moveAt(i) {
+  runTransaction(gameRefP(), (cur) => {
+    if (!cur || !cur.o || cur.w) return;
+    const mk = cur.x.cid === cid ? "x" : cur.o.cid === cid ? "o" : "";
+    if (!mk || cur.t !== mk || cur.b[i] !== "-") return;
+    cur.b = cur.b.slice(0, i) + mk + cur.b.slice(i + 1);
+    const r = calcBoard(cur.b);
+    if (r) {
+      cur.w = r.w;
+      if (r.w === "d") cur.d = (cur.d || 0) + 1;
+      else { const wc = cur[r.w].cid; cur.sc = cur.sc || {}; cur.sc[wc] = (cur.sc[wc] || 0) + 1; }
+    } else cur.t = mk === "x" ? "o" : "x";
+    return cur;
+  }).catch(() => note("Move failed. Try again."));
+}
+function renderGame() {
+  if ($("gamePanel").hidden) return;
+  const st = $("gStatus"), bd = $("gBoard"), bt = $("gBtns"), sc = $("gScore");
+  bd.innerHTML = ""; bt.innerHTML = ""; sc.textContent = "";
+  const addBtn = (label, fn) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "btn2"; b.textContent = label;
+    b.addEventListener("click", fn); bt.appendChild(b);
+  };
+  if (!game || !game.x) { st.textContent = "Challenge your partner to a game!"; bd.hidden = true; addBtn("Start new game", startGame); return; }
+  const mk = gMark();
+  if (!game.o) {
+    bd.hidden = true;
+    if (mk === "x") { st.textContent = "Waiting for your partner to join\u2026"; addBtn("Cancel", endGame); }
+    else { st.textContent = game.x.name + " wants to play Tic-Tac-Toe."; addBtn("Join game", joinGame); }
+    return;
+  }
+  bd.hidden = false;
+  const s = game.sc || {};
+  sc.textContent = game.x.name + " (X) " + (s[game.x.cid] || 0) + " \u2013 " + (s[game.o.cid] || 0) + " " + game.o.name + " (O)" + (game.d ? " \u00b7 draws " + game.d : "");
+  const res = game.w && game.w !== "d" ? calcBoard(game.b) : null;
+  const line = res ? res.line : [];
+  for (let i = 0; i < 9; i++) {
+    const c = game.b[i];
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cell" + (c === "x" ? " x" : c === "o" ? " o" : "") + (line.includes(i) ? " win" : "");
+    b.textContent = c === "x" ? "X" : c === "o" ? "O" : "";
+    b.disabled = !(c === "-" && !game.w && mk && game.t === mk);
+    b.addEventListener("click", () => moveAt(i));
+    bd.appendChild(b);
+  }
+  if (game.w === "d") st.textContent = "It's a draw \ud83e\udd1d";
+  else if (game.w) st.textContent = mk === game.w ? "You won! \ud83c\udf89" : game[game.w].name + " won this round.";
+  else if (mk) st.textContent = game.t === mk ? "Your turn (" + mk.toUpperCase() + ")" : "Waiting for " + game[game.t].name + "\u2026";
+  else st.textContent = "Watching \u2014 " + game[game.t].name + "'s turn";
+  if (game.w) addBtn("Play again", playAgain);
+  if (mk) addBtn("End game", endGame);
+}
+function openGame() {
+  if (!roomRef) return;
+  openPanel("gamePanel");
+  gUnseen = false; updateBadge();
+  renderGame();
+}
+$("gameClose").addEventListener("click", () => { $("gamePanel").hidden = true; });
+
+/* ---------- shared list ---------- */
+let todo = {}, todoUnsub = null;
+const todoPath = () => "rooms/" + room + "~todo";
+function renderTodo() {
+  const list = $("tdList");
+  list.innerHTML = "";
+  const items = Object.keys(todo).map((k) => Object.assign({ k }, todo[k]));
+  items.sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || (a.ts || 0) - (b.ts || 0));
+  items.forEach((it) => {
+    const row = document.createElement("div");
+    row.className = "tditem" + (it.done ? " done" : "");
+    const ck = document.createElement("button");
+    ck.type = "button"; ck.className = "ck";
+    ck.textContent = it.done ? "\u2705" : "\u2b1c";
+    ck.setAttribute("aria-label", it.done ? "Mark as not done" : "Mark as done");
+    ck.addEventListener("click", () => update(ref(db, todoPath() + "/" + it.k), { done: !it.done, dby: it.done ? null : me }).catch(() => {}));
+    const tt = document.createElement("div");
+    tt.className = "tt";
+    const sp = document.createElement("span"); sp.textContent = it.t || "";
+    const sm = document.createElement("small");
+    sm.textContent = it.done && it.dby ? "done by " + it.dby : (it.by ? "added by " + it.by : "");
+    tt.appendChild(sp); tt.appendChild(sm);
+    const rm = document.createElement("button");
+    rm.type = "button"; rm.className = "rm"; rm.textContent = "\u2715"; rm.setAttribute("aria-label", "Remove");
+    rm.addEventListener("click", () => remove(ref(db, todoPath() + "/" + it.k)).catch(() => {}));
+    row.appendChild(ck); row.appendChild(tt); row.appendChild(rm);
+    list.appendChild(row);
+  });
+  const left = items.filter((i) => !i.done).length;
+  $("tdCount").textContent = items.length ? left + " left of " + items.length : "Nothing here yet. Add the first item!";
+  $("tdClear").hidden = !items.some((i) => i.done);
+}
+function openTodo() {
+  if (!roomRef) return;
+  openPanel("todoPanel");
+  if (!todoUnsub) todoUnsub = onValue(ref(db, todoPath()), (snap) => { todo = snap.val() || {}; renderTodo(); });
+}
+function closeTodo() {
+  $("todoPanel").hidden = true;
+  if (todoUnsub) { todoUnsub(); todoUnsub = null; }
+  todo = {};
+}
+$("tdClose").addEventListener("click", closeTodo);
+$("tdForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const t = $("tdInput").value.trim().slice(0, 120);
+  if (!t || !roomRef) return;
+  $("tdInput").value = "";
+  push(ref(db, todoPath()), { t, by: me, done: false, ts: serverTimestamp() }).catch(() => note("Could not add that."));
+});
+$("tdClear").addEventListener("click", () => {
+  const upd = {};
+  Object.keys(todo).forEach((k) => { if (todo[k] && todo[k].done) upd[k] = null; });
+  if (Object.keys(upd).length) update(ref(db, todoPath()), upd).catch(() => {});
+});
+
+/* ---------- view once (photo / voice) ---------- */
+let onceNext = false;
+function updateOnceUI() {
+  $("pvOnce").textContent = "View once: " + (onceNext ? "On" : "Off");
+  $("pvOnce").classList.toggle("on", onceNext);
+  $("recOnce").textContent = onceNext ? "1\u00d7 On" : "1\u00d7 Off";
+  $("recOnce").classList.toggle("on", onceNext);
+}
+function resetOnce() { onceNext = false; updateOnceUI(); }
+$("pvOnce").addEventListener("click", () => { onceNext = !onceNext; updateOnceUI(); });
+$("recOnce").addEventListener("click", () => { onceNext = !onceNext; updateOnceUI(); });
+function closeOnceVoice() {
+  const a = $("onceAudio");
+  try { a.pause(); } catch (e) {}
+  a.removeAttribute("src");
+  $("onceVoice").hidden = true;
+}
+$("onceClose").addEventListener("click", closeOnceVoice);
+async function openOnce(key) {
+  const s = msgMap[key];
+  if (!s || s.mine || !s.m.once || s.m.vd) return;
+  let got = null, res = null;
+  try {
+    res = await runTransaction(ref(db, "rooms/" + room + "/" + key), (cur) => {
+      got = null;
+      if (!cur || !cur.once || cur.vd) return;
+      got = { img: cur.img, audio: cur.audio };
+      cur.vd = true; cur.img = null; cur.audio = null; cur.w = null; cur.h = null; cur.dur = null;
+      return cur;
+    });
+  } catch (e) { note("Could not open. Check your internet."); return; }
+  if (!res.committed || !got) { note("Already opened."); return; }
+  if (typeof got.img === "string" && got.img.startsWith("data:image/")) openViewer(got.img);
+  else if (typeof got.audio === "string" && got.audio.startsWith("data:audio/")) {
+    const a = $("onceAudio");
+    a.src = got.audio;
+    $("onceVoice").hidden = false;
+    a.play().catch(() => {});
+  } else note("Nothing to show.");
+}
+updateOnceUI();
+
+// Start locked if the person turned the lock on
+if (lockOn()) lkOpen("unlock", "Enter PIN", "");
+renderSettings();
 
 // Restore previous session
 const savedName = safeGet("chat.name"), savedRoom = safeGet("chat.room");
