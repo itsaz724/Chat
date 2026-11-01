@@ -408,7 +408,7 @@
   <input id="room" type="text" maxlength="30" autocomplete="off" autocapitalize="none" placeholder="e.g. blue-mango-47">
   <label for="pass">Password</label>
   <input id="pass" type="password" maxlength="100" autocomplete="off" autocapitalize="none" placeholder="Shared password">
-  <div class="hint">Both of you must type the same room code and the same password. Messages are locked with the password on your phone, so nobody else (not even the database owner) can read them. If you forget it, old messages cannot be recovered.</div>
+  <div class="hint">⏱ A room lasts <b>30 minutes</b>. After that, all messages are deleted automatically and both of you leave the room. The same code can be used again to create a new room.<br><br>Both of you must type the same room code and the same password. Messages are locked with the password on your phone, so nobody else (not even the database owner) can read them. If you forget it, old messages cannot be recovered.</div>
   <div class="error" id="joinError"></div>
   <button class="primary" id="joinBtn" type="button">Start chatting</button>
 </section>
@@ -841,7 +841,7 @@ function show(screen) {
 
 function cleanRoom(s) {
   // Firebase keys cannot contain . # $ [ ] /
-  return s.trim().toLowerCase().replace(/[.#$\[\]\/\s]+/g, "-");
+  return s.trim().toLowerCase().replace(/[.#$\[\]\/\s~]+/g, "-");
 }
 
 function fmtTime(ts) {
@@ -1023,6 +1023,65 @@ function renderMessage(key, m) {
   if (!mine) markSeen();
 }
 
+/* ---------- room life: every room lasts 30 minutes, then everything is deleted ---------- */
+const ROOM_MS = 30 * 60 * 1000;
+const ROOM_NODES = ["", "~draw", "~game", "~seen", "~typing", "~fx", "~mg", "~chk", "~todo", "~call", "~loc", "~lv", "~ctl", "~cfg"];
+let myLife = null, roomExp = 0, lifeTimer = null, warned5 = false, warned1 = false, expiring = false;
+
+function getSrvNow() {
+  return new Promise((res) => {
+    let done = false, off = null;
+    const fin = () => { if (done) return; done = true; try { if (off) off(); } catch (e) {} res(Date.now() + srvOff); };
+    try { off = onValue(ref(db, ".info/serverTimeOffset"), (sn) => { srvOff = sn.val() || 0; fin(); }, fin); } catch (e) { fin(); }
+    setTimeout(fin, 4000);
+  });
+}
+async function purgeRoomData(code) {
+  await Promise.all(ROOM_NODES.map((x) => remove(ref(db, "rooms/" + code + x))));
+}
+function fmtRoomLeft() {
+  const sec = Math.max(0, Math.ceil((roomExp - nowS()) / 1000));
+  return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
+}
+function tickLife() {
+  if (!roomExp || !roomRef || expiring) return;
+  const left = roomExp - nowS();
+  updateSub();
+  if (!warned5 && left <= 300000 && left > 60000) { warned5 = true; note("This room will be deleted in 5 minutes."); }
+  if (!warned1 && left <= 60000 && left > 0) { warned1 = true; note("This room will be deleted in 1 minute."); }
+  if (left <= 0) expireRoom();
+}
+function endRoom(msg) {
+  expiring = true;
+  clearInterval(lifeTimer); lifeTimer = null; roomExp = 0; myLife = null;
+  leaveRoom();
+  $("joinError").textContent = msg || "";
+}
+async function expireRoom() {
+  if (expiring) return;
+  expiring = true;
+  const code = room;
+  try {
+    await purgeRoomData(code);
+    await remove(ref(db, "rooms/" + code + "~life")); // removed last, so an interrupted clean-up is finished by the next person
+  } catch (e) { console.error(e); }
+  endRoom("Room time is over (30 min). All messages were deleted. You can create a new room with any code.");
+}
+function startLife() {
+  if (!myLife) return;
+  roomExp = myLife.exp; warned5 = warned1 = expiring = false;
+  clearInterval(lifeTimer);
+  lifeTimer = setInterval(tickLife, 1000);
+  const mine = myLife.n;
+  unsubs.push(onValue(ref(db, "rooms/" + room + "~life"), (sn) => {
+    const v = sn.val();
+    if (expiring || !roomRef) return;
+    if (!v || typeof v.exp !== "number" || v.n !== mine) { endRoom("This room has ended. Messages were deleted."); return; }
+    roomExp = v.exp;
+  }));
+  tickLife();
+}
+
 function enterRoom() {
   show("chat");
   otherTyping = ""; otherSeen = 0;
@@ -1049,6 +1108,7 @@ function enterRoom() {
   startCallListener();
   startLocListener();
   startExtras();
+  startLife();
   setTimeout(() => messagesEl.scrollTo(0, messagesEl.scrollHeight), 300);
 }
 
@@ -1062,6 +1122,7 @@ function leaveRoom() {
   closeEmoji();
   unsubs.forEach((u) => u());
   unsubs = [];
+  clearInterval(lifeTimer); lifeTimer = null; roomExp = 0;
   roomRef = null;
   ekey = null; dcache.clear();
   safeDel("chat.room");
@@ -1082,14 +1143,38 @@ $("joinBtn").addEventListener("click", async () => {
   try {
     const key = await deriveKey(pw, code);
     ekey = key;
+    // Is there a live room with this code? A room lasts 30 minutes; an expired code is free to use again.
+    const now = await getSrvNow();
+    const lref = ref(db, "rooms/" + code + "~life");
+    const claim = await runTransaction(lref, (cur) => {
+      if (cur && typeof cur.exp === "number" && cur.exp > now) return undefined; // live room: just join it
+      return { exp: now + ROOM_MS, n: Math.random().toString(36).slice(2, 10), st: "p" };
+    });
+    let life = claim.snapshot.val();
     const chk = ref(db, "rooms/" + code + "~chk");
-    const cur = (await get(chk)).val();
-    if (typeof cur === "string") {
-      const ok = await decStr(cur);
-      if (ok !== "e2ee-ok") { ekey = null; $("joinError").textContent = "Wrong password for this room."; btn.disabled = false; return; }
-    } else {
+    if (claim.committed) {
+      // we are creating a fresh room: wipe whatever an old, expired room with this code left behind
+      $("joinError").textContent = "Creating room...";
+      await purgeRoomData(code);
       await set(chk, await encStr("e2ee-ok"));
+      await update(lref, { st: null });
+      life = { exp: now + ROOM_MS, n: life.n };
+    } else {
+      // someone is just creating it: wait a moment until the old data is wiped
+      for (let i = 0; i < 20 && life && life.st === "p"; i++) {
+        await new Promise((r) => setTimeout(r, 500));
+        life = (await get(lref)).val();
+      }
+      if (!life || typeof life.exp !== "number") throw new Error("room-gone");
+      const cur = (await get(chk)).val();
+      if (typeof cur === "string") {
+        const ok = await decStr(cur);
+        if (ok !== "e2ee-ok") { ekey = null; $("joinError").textContent = "Wrong password for this room."; btn.disabled = false; return; }
+      } else {
+        await set(chk, await encStr("e2ee-ok"));
+      }
     }
+    myLife = { exp: life.exp, n: life.n };
   } catch (err) {
     console.error(err);
     ekey = null;
@@ -1114,10 +1199,12 @@ $("leaveBtn").addEventListener("click", async () => {
   const r = roomRef;
   finishCall("", true);
   try {
+    expiring = true;
     await set(ref(db, "rooms/" + room + "~ctl"), { ts: Date.now() });
     await remove(r);
-    await Promise.all(["~draw", "~game", "~seen", "~typing", "~fx", "~mg", "~chk", "~todo", "~call"].map((x) => remove(ref(db, "rooms/" + room + x))));
+    await Promise.all(["~draw", "~game", "~seen", "~typing", "~fx", "~mg", "~chk", "~todo", "~call", "~loc", "~lv", "~cfg", "~life"].map((x) => remove(ref(db, "rooms/" + room + x))));
   } catch (err) {
+    expiring = false;
     $("status").textContent = "Could not delete messages. Check your internet and try again.";
     console.error(err);
     return;
@@ -1902,21 +1989,27 @@ function renderLocBar() {
   const bar = $("locBar");
   bar.innerHTML = "";
   const now = nowS();
-  function row(text, label, fn) {
+  function row(text, label, fn, label2, fn2) {
     const r = document.createElement("div");
     r.className = "lrow";
     const sp = document.createElement("span");
     sp.textContent = text;
+    r.appendChild(sp);
+    if (label2) {
+      const b2 = document.createElement("button");
+      b2.type = "button"; b2.textContent = label2; b2.addEventListener("click", fn2);
+      r.appendChild(b2);
+    }
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = label;
     b.addEventListener("click", fn);
-    r.appendChild(sp); r.appendChild(b);
+    r.appendChild(b);
     bar.appendChild(r);
   }
   if (watchId !== null) {
     const left = Math.max(1, Math.ceil((shareUntil - now) / 60000));
-    row("\ud83d\udccd Sharing live location (" + left + " min left) \u00b7 " + (lastSentAt ? "sent " + ago(lastSentAt) : "waiting for GPS\u2026"), "Stop", () => stopShare("Stopped sharing location."));
+    row("\ud83d\udccd Sharing live location (" + left + " min left) \u00b7 " + (lastSentAt ? "sent " + ago(lastSentAt) : "waiting for GPS\u2026") + (lvNames.length ? " \u00b7 \ud83d\udc41\ufe0f " + lvNames.join(", ") + " viewing" : ""), "Stop", () => stopShare("Stopped sharing location."), "View", () => openMap(cid));
   }
   Object.keys(locData).forEach((k) => {
     const v = locData[k];
@@ -1928,6 +2021,24 @@ function renderLocBar() {
 
 let lmap = null, lmPartner = null, lmAcc = null, lmMe = null, lmMeAcc = null, lmTrail = null, trailPts = [];
 let leafletState = 0, mapMode = "", myMapWatch = null, myMapPos = null, mapFirst = true, pinTarget = null, lTiles = null, satOn = false;
+
+let lvRef = null, lvNames = [];
+function setViewing(on) {
+  if (on) {
+    if (lvRef || !room || !roomRef) return;
+    const r = ref(db, "rooms/" + room + "~lv/" + cid);
+    lvRef = r;
+    onDisconnect(r).remove().catch(() => {});
+    encStr(JSON.stringify({ name: me })).then((d) => { if (lvRef === r) return set(r, { d, ts: serverTimestamp() }); }).catch(() => {});
+  } else if (lvRef) {
+    const r = lvRef; lvRef = null;
+    onDisconnect(r).cancel().catch(() => {});
+    remove(r).catch(() => {});
+  }
+}
+function fmtClock(ms) {
+  try { return new Date(ms - srvOff).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); } catch (e) { return ""; }
+}
 
 function ensureLeaflet() {
   return new Promise((res) => {
@@ -1970,7 +2081,7 @@ function initLeaflet(v) {
   (satOn ? lTiles.sat : lTiles.map).addTo(lmap);
   lmTrail = L.polyline([], { color: "#f2b544", weight: 4, opacity: 0.8 }).addTo(lmap);
   lmAcc = L.circle([v.lat, v.lng], { radius: 20, color: "#f2b544", weight: 1, fillOpacity: 0.12 }).addTo(lmap);
-  lmPartner = L.circleMarker([v.lat, v.lng], { radius: 10, color: "#fff", weight: 3, fillColor: mapFor === "__me__" ? "#1e88e5" : "#e53935", fillOpacity: 1 }).addTo(lmap);
+  lmPartner = L.circleMarker([v.lat, v.lng], { radius: 10, color: "#fff", weight: 3, fillColor: (mapFor === "__me__" || mapFor === cid) ? "#1e88e5" : "#e53935", fillOpacity: 1 }).addTo(lmap);
   setTimeout(() => { if (lmap) lmap.invalidateSize(); }, 150);
 }
 function destroyLeaflet() {
@@ -2013,6 +2124,7 @@ function fitBoth() {
 
 function openMap(k) {
   mapFor = k; mapLast = { lat: 0, lng: 0, t: 0 }; mapFirst = true; mapMode = "";
+  if (k !== cid && k !== "__me__" && k !== "__pin__") setViewing(true);
   $("mapSat").textContent = satOn ? "Map" : "Satellite";
   $("locMap").hidden = false;
   startMyMapWatch();
@@ -2031,6 +2143,7 @@ function openMyMap() {
 }
 function closeMap() {
   mapFor = null; mapMode = "";
+  setViewing(false);
   $("locMap").hidden = true;
   $("mapFrame").removeAttribute("src");
   stopMyMapWatch();
@@ -2040,20 +2153,25 @@ function updateMap() {
   if (!mapFor || $("locMap").hidden || !mapMode) return;
   const v = mapTarget();
   const live = mapFor !== "__me__" && mapFor !== "__pin__";
+  const own = mapFor === cid;
   if (!v || !validPos(v)) {
-    if (live) { closeMap(); note("Location sharing ended."); return; }
-    $("mapTitle").textContent = mapFor === "__me__" ? "My location" : "Shared location";
-    $("mapSub").textContent = mapFor === "__me__" ? "Getting your location...\nAllow location if your phone asks." : "";
+    if (live && !own) { closeMap(); note("Location sharing ended."); return; }
+    if (own && watchId === null) { closeMap(); return; }
+    $("mapTitle").textContent = own ? "You are sharing" : mapFor === "__me__" ? "My location" : "Shared location";
+    $("mapSub").textContent = mapFor === "__pin__" ? "" : "Getting your location...\nAllow location if your phone asks.";
     return;
   }
   if (live && !(v.until > nowS())) { closeMap(); note("Location sharing ended."); return; }
   const mine = lastPos || myMapPos;
-  let sub = live ? "Updated " + ago(v.ts) : (mapFor === "__me__" ? "This is where you are now" : "Sent location");
+  let sub = own ? "This is how they see you \u00b7 sent " + ago(v.ts) : live ? "Updated " + ago(v.ts) : (mapFor === "__me__" ? "This is where you are now" : "Sent location");
   if (v.acc) sub += " \u00b7 accuracy ~" + v.acc + " m";
   if (v.spd > 1) sub += " \u00b7 moving ~" + Math.round(v.spd * 3.6) + " km/h";
-  if (mapFor !== "__me__" && mine && validPos(mine)) sub += "\nDistance from you: " + fmtDist(distM(mine, v));
-  if (live && typeof v.ts === "number" && nowS() - v.ts > 120000) sub += "\nTheir phone may have paused the app (screen off or app in background).";
-  $("mapTitle").textContent = (v.name || "Location");
+  if (!own && mapFor !== "__me__" && mine && validPos(mine) && mapFor !== "__pin__") sub += "\nDistance from you: " + fmtDist(distM(mine, v));
+  else if (!own && mapFor === "__pin__" && mine && validPos(mine)) sub += "\nDistance from you: " + fmtDist(distM(mine, v));
+  if (live && v.until > 0 && v.until < 1e14) sub += "\nLive until " + fmtClock(v.until);
+  if (own) sub += lvNames.length ? "\n\ud83d\udc41\ufe0f " + lvNames.join(", ") + " is viewing your location now" : "\nNobody is viewing right now";
+  if (live && !own && typeof v.ts === "number" && nowS() - v.ts > 120000) sub += "\nTheir phone may have paused the app (screen off or app in background).";
+  $("mapTitle").textContent = own ? "You (live)" : (v.name || "Location");
   $("mapSub").textContent = sub;
   $("mapOpen").href = "https://www.google.com/maps?q=" + v.lat + "," + v.lng;
 
@@ -2067,14 +2185,14 @@ function updateMap() {
       slideMarker(lmPartner, ll); lmAcc.setLatLng(ll);
     }
     lmAcc.setRadius(Math.max(5, v.acc || 20));
-    if (mine && validPos(mine) && mapFor !== "__me__") {
+    if (mine && validPos(mine) && mapFor !== "__me__" && !own) {
       const ml = [mine.lat, mine.lng];
       if (!lmMe) {
         lmMeAcc = L.circle(ml, { radius: mine.acc || 20, color: "#1e88e5", weight: 1, fillOpacity: 0.1 }).addTo(lmap);
         lmMe = L.circleMarker(ml, { radius: 8, color: "#fff", weight: 3, fillColor: "#1e88e5", fillOpacity: 1 }).addTo(lmap);
       } else { lmMe.setLatLng(ml); lmMeAcc.setLatLng(ml); lmMeAcc.setRadius(Math.max(5, mine.acc || 20)); }
     }
-    if (mapFirst) { mapFirst = false; if (mapFor === "__me__" || mapFor === "__pin__") lmap.setView(ll, 17); else fitBoth(); }
+    if (mapFirst) { mapFirst = false; if (mapFor === "__me__" || mapFor === "__pin__" || own) lmap.setView(ll, 17); else fitBoth(); }
     else if (live && !lmap.getBounds().pad(-0.2).contains(ll)) lmap.panTo(ll, { animate: true });
     else if (mapFor === "__me__") lmap.panTo(ll, { animate: true });
     return;
@@ -2093,7 +2211,16 @@ function updateMap() {
 }
 
 function startLocListener() {
-  locData = {};
+  locData = {}; lvNames = [];
+  unsubs.push(onValue(ref(db, "rooms/" + room + "~lv"), async (sn) => {
+    const raw = sn.val() || {}, names = [];
+    for (const k of Object.keys(raw)) {
+      if (k === cid || !raw[k] || typeof raw[k].d !== "string") continue;
+      const d = await decStr(raw[k].d);
+      if (d) { try { names.push(JSON.parse(d).name || "Someone"); } catch (e) {} }
+    }
+    lvNames = names; renderLocBar(); updateMap();
+  }));
   unsubs.push(onValue(ref(db, "rooms/" + room + "~loc"), ordered(decLoc, (snap, v) => {
     locData = v || {};
     renderLocBar();
@@ -2228,7 +2355,7 @@ const nowS = () => Date.now() + srvOff;
 
 function ttlLabel(ms) { return ms === 3600000 ? "1 hour" : ms === 86400000 ? "24 hours" : ms ? Math.round(ms / 60000) + " min" : "Off"; }
 function updateSub() {
-  $("whoami").textContent = otherTyping ? otherTyping + " is typing\u2026" : "You are " + me + (ttlMs ? " \u00b7 \u23f3 " + ttlLabel(ttlMs) : "");
+  $("whoami").textContent = otherTyping ? otherTyping + " is typing\u2026" : "You are " + me + (ttlMs ? " \u00b7 \u23f3 " + ttlLabel(ttlMs) : "") + (roomExp ? " \u00b7 \u23f1 " + fmtRoomLeft() : "");
 }
 
 /* ---------- typing + seen ---------- */
@@ -3815,6 +3942,21 @@ const savedName = safeGet("chat.name"), savedRoom = safeGet("chat.room");
 $("name").value = savedName;
 $("room").value = savedRoom;
 show("join");
+// if the room saved on this phone has already expired, delete its leftover data now
+if (savedRoom) (async () => {
+  try {
+    const code = cleanRoom(savedRoom);
+    if (!code) return;
+    const now = await getSrvNow();
+    const lref = ref(db, "rooms/" + code + "~life");
+    const lv = (await get(lref)).val();
+    if (lv && typeof lv.exp === "number" && lv.exp <= now) {
+      await purgeRoomData(code);
+      const again = (await get(lref)).val();
+      if (again && again.n === lv.n && again.exp <= now) await remove(lref);
+    }
+  } catch (e) {}
+})();
 if (savedName && savedRoom) setTimeout(() => { try { $("pass").focus(); } catch (e) {} }, 100);
 
 /* ---------- attach: pick a file or video from the phone ---------- */
