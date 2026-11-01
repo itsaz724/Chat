@@ -374,6 +374,22 @@
   #helpOk { background: #fff; color: #111; }
   .dgout { white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; color: var(--ink); margin: 10px 0 0; }
   .dgout:empty { display: none; }
+
+  /* attach: files + gallery videos */
+  form#composer { gap: 4px; }
+  form#composer .ico { width: 36px; }
+  .filecard { display: flex; flex-direction: column; gap: 6px; min-width: 190px; max-width: 100%; padding: 8px 10px; border-radius: 12px; background: rgba(127,127,127,.18); margin-bottom: 4px; }
+  .filecard .top { display: flex; align-items: center; gap: 10px; }
+  .filecard .fi { font-size: 30px; line-height: 1; flex: none; }
+  .filecard .fn { font-weight: 800; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46vw; }
+  .filecard .fs { font-size: 12px; opacity: .75; }
+  .filecard .fb { display: flex; gap: 6px; }
+  .filecard .fb button { flex: 1; padding: 7px 10px; border: 0; border-radius: 9px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; background: var(--accent); color: var(--accent-ink); }
+  .filecard .fb button.alt { background: rgba(127,127,127,.28); color: inherit; }
+  #fileView iframe { width: 100%; height: 70vh; border: 0; border-radius: 10px; background: #fff; }
+  #fileView .fvname { color: #fff; font-weight: 800; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #attProg .bar { width: min(280px, 80vw); height: 10px; border-radius: 99px; background: rgba(255,255,255,.25); overflow: hidden; }
+  #attProg .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
 </style>
 </head>
 <body>
@@ -382,7 +398,7 @@
   <h1>Our Chat</h1>
   <p>A private place for two people to talk.</p>
   <label for="name">Your name</label>
-  <input id="name" type="text" maxlength="20" autocomplete="off" placeholder="e.g. Rahim">
+  <input id="name" type="text" maxlength="20" autocomplete="off" placeholder="e.g. Asif Imtiaz">
   <label for="room">Secret room code</label>
   <input id="room" type="text" maxlength="30" autocomplete="off" autocapitalize="none" placeholder="e.g. blue-mango-47">
   <label for="pass">Password</label>
@@ -418,6 +434,7 @@
   <form id="composer" autocomplete="off">
     <button type="button" class="ico" id="emojiBtn" aria-label="Emoji">&#128522;</button>
     <input id="text" type="text" maxlength="1000" placeholder="Write a message" autocomplete="off">
+    <button type="button" class="ico" id="attachBtn" aria-label="Attach file or video from phone">&#128206;</button>
     <button type="button" class="ico" id="vidBtn" aria-label="Send video">&#127916;</button>
     <button type="button" class="ico" id="photoBtn" aria-label="Send photo">&#128247;</button>
     <button type="submit" id="textSendBtn" aria-label="Send" hidden>&#10148;</button>
@@ -425,6 +442,7 @@
     <button type="button" id="micBtn" aria-label="Record voice message">&#127908;</button>
   </form>
   <input id="photoInput" type="file" accept="image/*" hidden>
+  <input id="attachInput" type="file" accept="*/*" hidden>
 </section>
 
 <div id="locSheet" class="overlay" hidden>
@@ -528,6 +546,17 @@
     <button id="vrSend" type="button" hidden>Send</button>
     <button id="vrCancel" type="button">Cancel</button>
   </div>
+</div>
+<div id="fileView" class="overlay" hidden>
+  <div class="fvname" id="fvName"></div>
+  <iframe id="fvFrame" title="File"></iframe>
+  <div class="row"><button id="fvSave" type="button">Save</button><button id="fvOpen" type="button">Open in browser</button><button id="fvClose" type="button">Close</button></div>
+</div>
+<div id="attProg" class="overlay" hidden>
+  <div class="callname" id="apTitle">Preparing video...</div>
+  <div class="bar"><i id="apBar"></i></div>
+  <div class="callsub" id="apSub">Keep the app open</div>
+  <button id="apCancel" type="button">Cancel</button>
 </div>
 <div id="vidPlay" class="overlay" hidden>
   <video id="vidPlayEl" controls playsinline></video>
@@ -708,7 +737,7 @@ function ordered(decFn, handler) {
     chain = chain.then(() => decFn(raw)).then((v) => { handler(snap, v); }).catch((e) => console.error(e));
   };
 }
-const MSG_ENC = ["name", "text", "img", "audio", "video"];
+const MSG_ENC = ["name", "text", "img", "audio", "video", "file", "fname"];
 async function encMsg(o) {
   const out = Object.assign({}, o);
   for (const k of MSG_ENC) if (typeof out[k] === "string") out[k] = await encStr(out[k]);
@@ -929,6 +958,9 @@ function makeBubble(key, m) {
     v.className = "vid"; v.controls = true; v.playsInline = true; v.preload = "metadata";
     v.src = m.video;
     wrap.appendChild(v);
+  }
+  if (!m.once && typeof m.file === "string" && m.file.startsWith("data:")) {
+    wrap.appendChild(makeFileCard(m));
   }
   if (m.loc && Number.isFinite(m.loc.lat) && Number.isFinite(m.loc.lng) && Math.abs(m.loc.lat) <= 90 && Math.abs(m.loc.lng) <= 180) {
     const a = document.createElement("a");
@@ -2805,7 +2837,7 @@ function openMsgMenu(key) {
     b.type = "button"; b.textContent = "Delete"; b.className = "del";
     b.addEventListener("click", () => {
       closeMsgMenu();
-      update(ref(db, "rooms/" + room + "/" + key), { del: true, text: null, img: null, audio: null, video: null, loc: null, rx: null, w: null, h: null, dur: null, open: null })
+      update(ref(db, "rooms/" + room + "/" + key), { del: true, text: null, img: null, audio: null, video: null, file: null, fname: null, loc: null, rx: null, w: null, h: null, dur: null, open: null })
         .catch(() => note("Could not delete."));
     });
     acts.appendChild(b);
@@ -3574,6 +3606,221 @@ $("name").value = savedName;
 $("room").value = savedRoom;
 show("join");
 if (savedName && savedRoom) setTimeout(() => { try { $("pass").focus(); } catch (e) {} }, 100);
+
+/* ---------- attach: pick a file or video from the phone ---------- */
+const ATT_MAX_FILE = 4 * 1024 * 1024;      // documents and other files
+const ATT_VID_DIRECT = 3.5 * 1024 * 1024;  // videos up to this size are sent as they are
+const ATT_VID_TARGET = 3.2 * 1000 * 1000;  // bigger videos are re-encoded to about this size
+const ATT_VID_SECONDS = 60;
+const ATT_DATA_MAX = 6200000;              // max characters of the final data URL
+const MIME_BY_EXT = { pdf: "application/pdf", txt: "text/plain", csv: "text/csv", json: "application/json", doc: "application/msword", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", xls: "application/vnd.ms-excel", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ppt: "application/vnd.ms-powerpoint", pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation", zip: "application/zip", mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime", m4a: "audio/mp4", mp3: "audio/mpeg" };
+function fileExt(n) { const i = String(n || "").lastIndexOf("."); return i < 0 ? "" : n.slice(i + 1).toLowerCase(); }
+function fileIcon(name, mime) {
+  const e = fileExt(name);
+  if (e === "pdf" || mime === "application/pdf") return "\ud83d\udcd5";
+  if (["doc", "docx", "txt", "rtf"].includes(e)) return "\ud83d\udcc4";
+  if (["xls", "xlsx", "csv"].includes(e)) return "\ud83d\udcca";
+  if (["ppt", "pptx"].includes(e)) return "\ud83d\udcfd\ufe0f";
+  if (["zip", "rar", "7z"].includes(e)) return "\ud83d\uddc4\ufe0f";
+  return "\ud83d\udcce";
+}
+function fmtBytes(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; }
+function readDataURL(blob) {
+  return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(blob); });
+}
+function dataUrlMime(u) { const m = /^data:([^;,]*)/.exec(u || ""); return (m && m[1]) || "application/octet-stream"; }
+function dataUrlToBlob(u) {
+  const i = u.indexOf(","), head = u.slice(0, i), body = u.slice(i + 1);
+  const mime = dataUrlMime(u);
+  if (/;base64/i.test(head)) return new Blob([unb64(body)], { type: mime });
+  return new Blob([decodeURIComponent(body)], { type: mime });
+}
+function dataUrlBytes(u) { const i = u.indexOf(","); return Math.floor((u.length - i - 1) * 3 / 4); }
+
+/* file card shown inside a chat bubble */
+function makeFileCard(m) {
+  const mime = dataUrlMime(m.file), name = (typeof m.fname === "string" && m.fname) || "file";
+  const card = document.createElement("div");
+  card.className = "filecard";
+  const top = document.createElement("div"); top.className = "top";
+  const ic = document.createElement("div"); ic.className = "fi"; ic.textContent = fileIcon(name, mime);
+  const info = document.createElement("div");
+  const fn = document.createElement("div"); fn.className = "fn"; fn.textContent = name;
+  const fs = document.createElement("div"); fs.className = "fs"; fs.textContent = fmtBytes(dataUrlBytes(m.file));
+  info.appendChild(fn); info.appendChild(fs); top.appendChild(ic); top.appendChild(info); card.appendChild(top);
+  const fb = document.createElement("div"); fb.className = "fb";
+  if (mime === "application/pdf" || mime.startsWith("text/")) {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = "View";
+    b.addEventListener("click", (e) => { e.stopPropagation(); openFileView(m.file, name); });
+    fb.appendChild(b);
+  }
+  const sv = document.createElement("button"); sv.type = "button"; sv.textContent = "Save";
+  if (fb.children.length) sv.className = "alt";
+  sv.addEventListener("click", (e) => { e.stopPropagation(); saveFile(m.file, name); });
+  fb.appendChild(sv); card.appendChild(fb);
+  return card;
+}
+let fvUrl = "", fvName = "";
+function openFileView(dataUrl, name) {
+  try {
+    if (fvUrl) URL.revokeObjectURL(fvUrl);
+    fvUrl = URL.createObjectURL(dataUrlToBlob(dataUrl)); fvName = name;
+    $("fvName").textContent = name;
+    $("fvFrame").src = fvUrl;
+    $("fileView").hidden = false;
+  } catch (e) { console.error(e); note("Could not open this file."); }
+}
+function closeFileView() {
+  $("fileView").hidden = true; $("fvFrame").removeAttribute("src");
+  if (fvUrl) { const u = fvUrl; fvUrl = ""; setTimeout(() => URL.revokeObjectURL(u), 1000); }
+}
+function saveFile(dataUrl, name) {
+  try {
+    const url = URL.createObjectURL(dataUrlToBlob(dataUrl));
+    const a = document.createElement("a");
+    a.href = url; a.download = name; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (e) { console.error(e); note("Could not save this file."); }
+}
+$("fvClose").addEventListener("click", closeFileView);
+$("fvSave").addEventListener("click", () => { if (fvUrl) { const a = document.createElement("a"); a.href = fvUrl; a.download = fvName || "file"; document.body.appendChild(a); a.click(); a.remove(); } });
+$("fvOpen").addEventListener("click", () => { if (fvUrl) window.open(fvUrl, "_blank", "noopener"); });
+
+/* progress sheet for video preparation */
+let attCancel = false;
+function attShow(title, sub) { $("apTitle").textContent = title; $("apSub").textContent = sub || ""; $("apBar").style.width = "0"; $("attProg").hidden = false; }
+function attHide() { $("attProg").hidden = true; }
+$("apCancel").addEventListener("click", () => { attCancel = true; });
+
+/* re-encode a big gallery video to a small one (plays it once, up to 60 s, 480 px) */
+async function shrinkVideo(file) {
+  const url = URL.createObjectURL(file);
+  const v = document.createElement("video");
+  v.playsInline = true; v.preload = "auto"; v.src = url;
+  v.style.cssText = "position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0";
+  document.body.appendChild(v);
+  let ac = null;
+  const cleanup = () => { try { v.pause(); } catch (e) {} v.remove(); URL.revokeObjectURL(url); if (ac) { try { ac.close(); } catch (e) {} } };
+  try {
+    await new Promise((res, rej) => { v.onloadedmetadata = res; v.onerror = () => rej(new Error("This video format is not supported on this phone.")); });
+    const dur = Math.min(v.duration && isFinite(v.duration) ? v.duration : ATT_VID_SECONDS, ATT_VID_SECONDS);
+    const vw = v.videoWidth || 480, vh = v.videoHeight || 640, k = Math.min(1, 480 / Math.max(vw, vh));
+    const w = Math.max(2, Math.round(vw * k / 2) * 2), h = Math.max(2, Math.round(vh * k / 2) * 2);
+    const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    const ctx = cv.getContext("2d");
+    const stream = cv.captureStream(24);
+    let hasAudio = false;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      ac = new AC();
+      const src = ac.createMediaElementSource(v), dest = ac.createMediaStreamDestination();
+      src.connect(dest); // not connected to the speaker, so nothing is heard while preparing
+      const at = dest.stream.getAudioTracks()[0];
+      if (at) { stream.addTrack(at); hasAudio = true; }
+      if (ac.state === "suspended") await ac.resume();
+    } catch (e) { console.warn("no audio track", e); }
+    const mime = vrPickMime();
+    const bps = Math.max(150000, Math.min(700000, Math.floor(ATT_VID_TARGET * 8 / Math.max(dur, 1)) - 40000));
+    const o = { videoBitsPerSecond: bps, audioBitsPerSecond: 32000 };
+    if (mime) o.mimeType = mime;
+    let rec;
+    try { rec = new MediaRecorder(stream, o); } catch (e) { rec = new MediaRecorder(stream); }
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise((res) => { rec.onstop = res; });
+    rec.start(500);
+    v.currentTime = 0;
+    await v.play();
+    await new Promise((res) => {
+      const tick = () => {
+        if (attCancel || v.ended || v.currentTime >= dur) { res(); return; }
+        try { ctx.drawImage(v, 0, 0, w, h); } catch (e) {}
+        $("apBar").style.width = Math.min(100, Math.round(v.currentTime / dur * 100)) + "%";
+        $("apSub").textContent = Math.round(v.currentTime) + "s / " + Math.round(dur) + "s \u00b7 keep the app open";
+        requestAnimationFrame(tick);
+      };
+      tick();
+    });
+    if (rec.state !== "inactive") rec.stop();
+    await stopped;
+    if (attCancel) throw new Error("cancelled");
+    const base = (((rec.mimeType) || "video/webm").split(";")[0]) || "video/webm";
+    return { blob: new Blob(chunks, { type: base }), dur: Math.max(1, Math.round(dur)), hasAudio };
+  } finally { cleanup(); }
+}
+function videoDuration(file) {
+  return new Promise((res) => {
+    const u = URL.createObjectURL(file), v = document.createElement("video");
+    v.preload = "metadata"; v.src = u;
+    const done = (d) => { URL.revokeObjectURL(u); res(d); };
+    v.onloadedmetadata = () => done(isFinite(v.duration) ? Math.round(v.duration) : 0);
+    v.onerror = () => done(0);
+  });
+}
+
+async function sendAttachedVideo(f) {
+  const direct = f.size <= ATT_VID_DIRECT && /^video\/(mp4|webm)/i.test(f.type);
+  let blob = f, dur = 0;
+  if (direct) {
+    dur = await videoDuration(f);
+  } else {
+    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
+      showHelp("Video too big", "This video is " + fmtBytes(f.size) + ". Videos must be under 3.5 MB here, and this browser cannot shrink it. Try Chrome, or record a short video with the \ud83c\udfac button."); return;
+    }
+    attCancel = false;
+    attShow("Preparing video...", "Making it small enough to send");
+    try {
+      const r = await shrinkVideo(f);
+      blob = r.blob; dur = r.dur;
+      if (!r.hasAudio) note("Sent without sound (this browser could not keep the audio).");
+    } catch (e) {
+      attHide();
+      if (!attCancel) showHelp("Could not prepare video", (e && e.message) || "Please try another video, or record a short one with the \ud83c\udfac button.");
+      return;
+    }
+    attHide();
+  }
+  $("status").textContent = "Sending video...";
+  let url;
+  try { url = await readDataURL(blob); } catch (e) { $("status").textContent = "Could not read the video."; return; }
+  if (url.length > ATT_DATA_MAX) { $("status").textContent = ""; showHelp("Video too big", "Even after shrinking, this video is too large (" + fmtBytes(blob.size) + "). Please pick a shorter one."); return; }
+  await sendMsg({ video: url, dur: dur || 1 });
+}
+
+async function sendAttachedFile(f) {
+  if (f.size > ATT_MAX_FILE) { showHelp("File too big", f.name + " is " + fmtBytes(f.size) + ". The limit for files is " + fmtBytes(ATT_MAX_FILE) + "."); return; }
+  $("status").textContent = "Sending file...";
+  let url;
+  try { url = await readDataURL(f); } catch (e) { $("status").textContent = "Could not read that file."; return; }
+  const mime = f.type || MIME_BY_EXT[fileExt(f.name)] || "application/octet-stream";
+  url = "data:" + mime + url.slice(url.indexOf(";"));
+  if (url.length > ATT_DATA_MAX) { $("status").textContent = ""; showHelp("File too big", "This file is too large to send."); return; }
+  await sendMsg({ file: url, fname: String(f.name || "file").slice(0, 100) });
+}
+
+function handOver(input, f) { // reuse the photo / voice flows that already exist
+  try { const dt = new DataTransfer(); dt.items.add(f); input.files = dt.files; input.dispatchEvent(new Event("change")); return true; }
+  catch (e) { return false; }
+}
+
+$("attachBtn").addEventListener("click", () => { if (!roomRef) return; closeEmoji(); graceUntil = Date.now() + 180000; $("attachInput").click(); });
+$("attachInput").addEventListener("change", async () => {
+  const f = $("attachInput").files && $("attachInput").files[0];
+  $("attachInput").value = "";
+  if (!f || !roomRef) return;
+  const type = f.type || MIME_BY_EXT[fileExt(f.name)] || "";
+  try {
+    if (type.startsWith("image/") && handOver($("photoInput"), f)) return;
+    if (type.startsWith("audio/") && handOver($("audioPick"), f)) return;
+    if (type.startsWith("video/")) {
+      if (!confirm("Send video " + f.name + " (" + fmtBytes(f.size) + ")?")) return;
+      await sendAttachedVideo(f); return;
+    }
+    if (!confirm("Send file " + f.name + " (" + fmtBytes(f.size) + ")?")) return;
+    await sendAttachedFile(f);
+  } catch (e) { console.error(e); $("status").textContent = "Could not send that. Try again."; }
+});
 </script>
 </body>
 </html>
