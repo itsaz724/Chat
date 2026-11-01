@@ -162,6 +162,11 @@
   #locMap .row button, #locMap .row .abtn { width: auto; padding: 12px 22px; }
   #locCancel, #mapClose { background: #c62828 !important; color: #fff !important; }
   #mapFrame { width: min(560px, 100%); height: 52vh; border: 0; border-radius: 12px; background: #dde; }
+  #mapBox { width: min(560px, 100%); height: 52vh; border-radius: 12px; background: #dde; isolation: isolate; }
+  #mapBox[hidden], #mapFrame[hidden] { display: none; }
+  #locMap .row { flex-wrap: wrap; justify-content: center; gap: 8px; }
+  #locMap .row button, #locMap .row .abtn { padding: 10px 14px; font-size: 14px; }
+  #locMap .callsub { white-space: pre-line; text-align: center; }
   .msg .locbtn { display: inline-block; margin-bottom: 4px; padding: 8px 12px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font-weight: 800; text-decoration: none; }
   #callAccept { background: #2e7d32; color: #fff; }
   #callDecline, #callEnd { background: #c62828; color: #fff; }
@@ -447,6 +452,7 @@
 
 <div id="locSheet" class="overlay" hidden>
   <div class="callname">Share location</div>
+  <button id="locMe" type="button">See my location on map</button>
   <button id="locOnce" type="button">Send my current location</button>
   <button id="loc15" type="button">Share live: 15 minutes</button>
   <button id="loc60" type="button">Share live: 1 hour</button>
@@ -455,9 +461,10 @@
 </div>
 <div id="locMap" class="overlay" hidden>
   <div class="callname" id="mapTitle"></div>
-  <iframe id="mapFrame" title="Map" referrerpolicy="no-referrer"></iframe>
+  <div id="mapBox" hidden></div>
+  <iframe id="mapFrame" title="Map" referrerpolicy="no-referrer" hidden></iframe>
   <div class="callsub" id="mapSub"></div>
-  <div class="row"><a id="mapOpen" class="abtn" target="_blank" rel="noopener noreferrer" href="#">Open in Google Maps</a><button id="mapClose" type="button">Close</button></div>
+  <div class="row"><button id="mapMe" type="button">&#128205; Me</button><button id="mapFit" type="button">Show both</button><button id="mapSat" type="button">Satellite</button><a id="mapOpen" class="abtn" target="_blank" rel="noopener noreferrer" href="#">Open in Google Maps</a><button id="mapClose" type="button">Close</button></div>
 </div>
 <div id="call" class="overlay" hidden>
   <video id="remoteVideo" class="rv" autoplay playsinline muted></video>
@@ -968,7 +975,9 @@ function makeBubble(key, m) {
     a.href = "https://www.google.com/maps?q=" + m.loc.lat + "," + m.loc.lng;
     a.target = "_blank";
     a.rel = "noopener noreferrer";
-    a.textContent = "\ud83d\udccd Shared location \u2014 open in Maps";
+    a.textContent = "\ud83d\udccd Shared location \u2014 tap to view";
+    { const pl = { lat: m.loc.lat, lng: m.loc.lng };
+      a.addEventListener("click", (ev) => { ev.preventDefault(); openPin(pl); }); }
     wrap.appendChild(a);
   }
   if (m.text) {
@@ -1364,21 +1373,44 @@ const cid = (() => {
   return v;
 })();
 const callCid = Math.random().toString(36).slice(2) + Date.now().toString(36); // per page load, so two tabs can call each other
+// Optional: put your own TURN server(s) here for the most reliable calls, e.g.
+// [{ urls: ["turn:HOST:80","turn:HOST:443?transport=tcp","turns:HOST:443?transport=tcp"], username: "USER", credential: "PASS" }]
+const EXTRA_TURN = [
+  { urls: "stun:stun.relay.metered.ca:80" },
+  { urls: [
+      "turn:global.relay.metered.ca:80",
+      "turn:global.relay.metered.ca:80?transport=tcp",
+      "turn:global.relay.metered.ca:443",
+      "turns:global.relay.metered.ca:443?transport=tcp"
+    ], username: "674a20cf94bf30b62cb1b339", credential: "qRKPADZ0Lij3j6LA" }
+];
 const ICE = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
     { urls: "stun:stun.cloudflare.com:3478" },
+    { urls: "stun:global.stun.twilio.com:3478" },
+    { urls: "stun:stun.stunprotocol.org:3478" },
+    { urls: "stun:stun.services.mozilla.com:3478" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
     { urls: "stun:openrelay.metered.ca:80" },
     { urls: [
         "turn:openrelay.metered.ca:80",
         "turn:openrelay.metered.ca:80?transport=tcp",
         "turn:openrelay.metered.ca:443",
         "turns:openrelay.metered.ca:443?transport=tcp"
-      ], username: "openrelayproject", credential: "openrelayproject" }
-  ],
-  iceCandidatePoolSize: 4,
+      ], username: "openrelayproject", credential: "openrelayproject" },
+    { urls: [
+        "turn:staticauth.openrelay.metered.ca:80",
+        "turn:staticauth.openrelay.metered.ca:80?transport=tcp",
+        "turn:staticauth.openrelay.metered.ca:443",
+        "turns:staticauth.openrelay.metered.ca:443?transport=tcp"
+      ], username: "openrelayproject", credential: "openrelayproject" },
+    { urls: ["turn:freestun.net:3478", "turn:freestun.net:5349"], username: "free", credential: "free" }
+  ].concat(typeof EXTRA_TURN !== "undefined" ? EXTRA_TURN : []),
+  iceCandidatePoolSize: 8,
   bundlePolicy: "max-bundle",
   rtcpMuxPolicy: "require"
 };
@@ -1402,6 +1434,15 @@ function tuneOpus(sdp) {
 let callPhase = "idle", pc = null, localStream = null, callRef = null;
 let incomingOffer = null, remoteSet = false, callWritten = false;
 let callVideo = false, camFacing = "user";
+let connTimer = null;
+function armConnect() {
+  clearTimeout(connTimer);
+  connTimer = setTimeout(() => {
+    if (callPhase !== "connecting") return;
+    tryReconnect(); // fresh ICE attempt, repeats every 7 s, relay-only from the 3rd try
+    connTimer = setTimeout(() => { if (callPhase === "connecting") finishCall("Could not connect. Try again, or switch Wi-Fi / mobile data.", true); }, 50000);
+  }, 10000);
+}
 let callTimer = null, ringTimer = null, noAnswerTimer = null, callStartAt = 0, audioCtx = null;
 
 function note(msg) {
@@ -1455,7 +1496,7 @@ function stopRing() { clearInterval(ringTimer); ringTimer = null; }
 function waitIce(conn, ms) {
   return new Promise((res) => {
     if (conn.iceGatheringState === "complete") return res();
-    const t = setTimeout(done, ms || 5000);
+    const t = setTimeout(done, ms || 9000);
     function done() { clearTimeout(t); conn.removeEventListener("icegatheringstatechange", chk); res(); }
     function chk() { if (conn.iceGatheringState === "complete") done(); }
     conn.addEventListener("icegatheringstatechange", chk);
@@ -1484,9 +1525,10 @@ async function getMic(video) {
 }
 
 function goActive() {
+  if (reconnecting) setReconnecting(false);
   callPhase = "active";
   stopRing();
-  clearTimeout(noAnswerTimer);
+  clearTimeout(noAnswerTimer); clearTimeout(connTimer);
   callStartAt = Date.now();
   showCall("active");
   clearInterval(callTimer);
@@ -1500,7 +1542,7 @@ function finishCall(msg, removeNode) {
   if (callPhase === "idle") return;
   callPhase = "idle";
   stopRing();
-  clearTimeout(noAnswerTimer);
+  clearTimeout(noAnswerTimer); clearTimeout(connTimer);
   clearInterval(callTimer);
   if (pc) { try { pc.close(); } catch (e) {} pc = null; }
   if (localStream) { localStream.getTracks().forEach((t) => t.stop()); localStream = null; }
@@ -1539,7 +1581,7 @@ function setReconnecting(on) {
 }
 
 async function callerRestart() {
-  if (!isCaller || reBusy || !pc || callPhase !== "active") return;
+  if (!isCaller || reBusy || !pc || (callPhase !== "active" && callPhase !== "connecting")) return;
   reBusy = true;
   try {
     reN += 1;
@@ -1572,13 +1614,15 @@ async function calleeRequestRestart() {
 }
 
 function tryReconnect() {
-  if (callPhase !== "active" || !pc) return;
+  if ((callPhase !== "active" && callPhase !== "connecting") || !pc) return;
   setReconnecting(true);
   reTries += 1;
+  // after 2 failed tries, force the relay (TURN) path: it works through almost any NAT/firewall
+  if (reTries >= 3) { try { pc.setConfiguration(Object.assign({}, ICE, { iceTransportPolicy: "relay" })); } catch (e) {} }
   if (isCaller) callerRestart(); else calleeRequestRestart();
   clearTimeout(reTimer);
   // keep trying every 7 seconds until it works (or gives up after 45 s)
-  reTimer = setTimeout(() => { if (reconnecting && callPhase === "active") { reBusy = false; tryReconnect(); } }, 7000);
+  reTimer = setTimeout(() => { if (reconnecting && (callPhase === "active" || callPhase === "connecting")) { reBusy = false; tryReconnect(); } }, 7000);
 }
 
 async function calleeHandleRestart(re) {
@@ -1669,7 +1713,10 @@ function makePc(stream) {
       else if (reconnecting) setReconnecting(false);
     } else if (st === "failed") {
       if (callPhase === "active") tryReconnect();
+      else if (callPhase === "connecting" && reTries < 6) tryReconnect();
       else finishCall("Could not connect. Try Wi-Fi on one phone.", true);
+    } else if (st === "disconnected" && callPhase === "connecting") {
+      setTimeout(() => { if (pc && callPhase === "connecting" && pc.connectionState !== "connected" && !reconnecting) tryReconnect(); }, 4000);
     } else if (st === "disconnected" && callPhase === "active") {
       setReconnecting(true);
       setTimeout(() => { if (pc && callPhase === "active" && pc.connectionState !== "connected") tryReconnect(); }, 2500);
@@ -1725,7 +1772,7 @@ async function acceptCall() {
   callPhase = "connecting";
   isCaller = false;
   localStream = stream;
-  showCall("connecting");
+  showCall("connecting"); armConnect();
   try {
     makePc(stream);
     await pc.setRemoteDescription({ type: incomingOffer.type, sdp: incomingOffer.sdp });
@@ -1759,7 +1806,7 @@ function startCallListener() {
       return;
     }
     if (v.cid !== callCid) {
-      if (callPhase === "active" && v.re) calleeHandleRestart(v.re);
+      if ((callPhase === "active" || callPhase === "connecting") && v.re) calleeHandleRestart(v.re);
       if (callPhase === "idle" && v.state === "ringing" && v.offer) {
         callPhase = "incoming";
         incomingOffer = v.offer;
@@ -1770,14 +1817,14 @@ function startCallListener() {
           try { new Notification((v.name || "Someone") + " is calling you"); } catch (e) {}
         }
       }
-    } else if (callPhase === "active" && isCaller) {
+    } else if ((callPhase === "active" || callPhase === "connecting") && isCaller) {
       if (v.rq && v.rq !== lastRq) { lastRq = v.rq; callerRestart(); }
       if (v.rea) callerHandleAnswer(v.rea);
     } else if (callPhase === "calling" && v.answer && pc && !remoteSet) {
       remoteSet = true;
       clearTimeout(noAnswerTimer);
       callPhase = "connecting";
-      showCall("connecting");
+      showCall("connecting"); armConnect();
       try {
         await pc.setRemoteDescription({ type: v.answer.type, sdp: v.answer.sdp });
       } catch (err) {
@@ -1879,16 +1926,161 @@ function renderLocBar() {
   bar.hidden = bar.children.length === 0;
 }
 
-function openMap(k) { mapFor = k; mapLast = { lat: 0, lng: 0, t: 0 }; $("locMap").hidden = false; updateMap(); }
-function closeMap() { mapFor = null; $("locMap").hidden = true; $("mapFrame").removeAttribute("src"); }
+let lmap = null, lmPartner = null, lmAcc = null, lmMe = null, lmMeAcc = null, lmTrail = null, trailPts = [];
+let leafletState = 0, mapMode = "", myMapWatch = null, myMapPos = null, mapFirst = true, pinTarget = null, lTiles = null, satOn = false;
+
+function ensureLeaflet() {
+  return new Promise((res) => {
+    if (window.L) { leafletState = 2; return res(true); }
+    if (leafletState === 3) return res(false);
+    if (leafletState === 1) { const t = setInterval(() => { if (window.L) { clearInterval(t); res(true); } else if (leafletState === 3) { clearInterval(t); res(false); } }, 200); return; }
+    leafletState = 1;
+    const css = document.createElement("link");
+    css.rel = "stylesheet"; css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+    document.head.appendChild(css);
+    const sc = document.createElement("script");
+    sc.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+    sc.onload = () => { leafletState = window.L ? 2 : 3; res(!!window.L); };
+    sc.onerror = () => { leafletState = 3; res(false); };
+    document.head.appendChild(sc);
+    setTimeout(() => { if (leafletState === 1) { leafletState = 3; res(false); } }, 12000);
+  });
+}
+
+function startMyMapWatch() {
+  stopMyMapWatch();
+  if (!navigator.geolocation || watchId !== null) return; // already tracking myself while sharing
+  try {
+    myMapWatch = navigator.geolocation.watchPosition(
+      (p) => { myMapPos = { lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0) }; updateMap(); },
+      () => {}, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+  } catch (e) {}
+}
+function stopMyMapWatch() {
+  if (myMapWatch !== null) { try { navigator.geolocation.clearWatch(myMapWatch); } catch (e) {} myMapWatch = null; }
+  myMapPos = null;
+}
+function fmtDist(m) { return m < 1000 ? Math.round(m) + " m" : (m / 1000).toFixed(m < 10000 ? 2 : 1) + " km"; }
+
+function initLeaflet(v) {
+  if (lmap) return;
+  lmap = L.map("mapBox", { zoomControl: true }).setView([v.lat, v.lng], 16);
+  lTiles = { map: L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }),
+             sat: L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Tiles &copy; Esri" }) };
+  (satOn ? lTiles.sat : lTiles.map).addTo(lmap);
+  lmTrail = L.polyline([], { color: "#f2b544", weight: 4, opacity: 0.8 }).addTo(lmap);
+  lmAcc = L.circle([v.lat, v.lng], { radius: 20, color: "#f2b544", weight: 1, fillOpacity: 0.12 }).addTo(lmap);
+  lmPartner = L.circleMarker([v.lat, v.lng], { radius: 10, color: "#fff", weight: 3, fillColor: mapFor === "__me__" ? "#1e88e5" : "#e53935", fillOpacity: 1 }).addTo(lmap);
+  setTimeout(() => { if (lmap) lmap.invalidateSize(); }, 150);
+}
+function destroyLeaflet() {
+  if (lmap) { try { lmap.remove(); } catch (e) {} }
+  lmap = lmPartner = lmAcc = lmMe = lmMeAcc = lmTrail = lTiles = null; trailPts = [];
+}
+function slideMarker(mk, to) {
+  const from = mk.getLatLng(), t0 = performance.now(), dur = 900;
+  if (mk.__raf) cancelAnimationFrame(mk.__raf);
+  (function step(t) {
+    const k = Math.min(1, (t - t0) / dur);
+    mk.setLatLng([from.lat + (to[0] - from.lat) * k, from.lng + (to[1] - from.lng) * k]);
+    if (k < 1) mk.__raf = requestAnimationFrame(step);
+  })(t0);
+}
+function mapTarget() {
+  if (mapFor === "__me__") { const m = lastPos || myMapPos; return m ? Object.assign({ name: "My location", until: Infinity }, m) : null; }
+  if (mapFor === "__pin__") return pinTarget;
+  return locData[mapFor];
+}
+function goMe() {
+  const mine = lastPos || myMapPos;
+  if (!lmap || !mine) { note("Getting your location..."); return; }
+  lmap.setView([mine.lat, mine.lng], Math.max(lmap.getZoom(), 16), { animate: true });
+}
+function toggleSat() {
+  if (!lmap || !lTiles) return;
+  satOn = !satOn;
+  lmap.removeLayer(satOn ? lTiles.map : lTiles.sat);
+  (satOn ? lTiles.sat : lTiles.map).addTo(lmap);
+  $("mapSat").textContent = satOn ? "Map" : "Satellite";
+}
+function fitBoth() {
+  const v = mapTarget();
+  if (!lmap || !validPos(v)) return;
+  const mine = lastPos || myMapPos;
+  if (mine && mapFor !== "__me__") lmap.fitBounds(L.latLngBounds([[v.lat, v.lng], [mine.lat, mine.lng]]).pad(0.3), { maxZoom: 17, animate: true });
+  else lmap.setView([v.lat, v.lng], 17, { animate: true });
+}
+
+function openMap(k) {
+  mapFor = k; mapLast = { lat: 0, lng: 0, t: 0 }; mapFirst = true; mapMode = "";
+  $("mapSat").textContent = satOn ? "Map" : "Satellite";
+  $("locMap").hidden = false;
+  startMyMapWatch();
+  ensureLeaflet().then((ok) => {
+    if (mapFor !== k) return;
+    mapMode = ok ? "leaflet" : "iframe";
+    $("mapBox").hidden = !ok; $("mapFrame").hidden = ok;
+    $("mapSat").hidden = !ok;
+    updateMap();
+  });
+}
+function openPin(p) { pinTarget = { lat: p.lat, lng: p.lng, name: "Shared location", until: Infinity }; openMap("__pin__"); }
+function openMyMap() {
+  if (!navigator.geolocation) { note("Location is not supported on this device."); return; }
+  openMap("__me__");
+}
+function closeMap() {
+  mapFor = null; mapMode = "";
+  $("locMap").hidden = true;
+  $("mapFrame").removeAttribute("src");
+  stopMyMapWatch();
+  destroyLeaflet();
+}
 function updateMap() {
-  if (!mapFor || $("locMap").hidden) return;
-  const v = locData[mapFor];
-  if (!validPos(v) || !(v.until > nowS())) { closeMap(); note("Location sharing ended."); return; }
+  if (!mapFor || $("locMap").hidden || !mapMode) return;
+  const v = mapTarget();
+  const live = mapFor !== "__me__" && mapFor !== "__pin__";
+  if (!v || !validPos(v)) {
+    if (live) { closeMap(); note("Location sharing ended."); return; }
+    $("mapTitle").textContent = mapFor === "__me__" ? "My location" : "Shared location";
+    $("mapSub").textContent = mapFor === "__me__" ? "Getting your location...\nAllow location if your phone asks." : "";
+    return;
+  }
+  if (live && !(v.until > nowS())) { closeMap(); note("Location sharing ended."); return; }
+  const mine = lastPos || myMapPos;
+  let sub = live ? "Updated " + ago(v.ts) : (mapFor === "__me__" ? "This is where you are now" : "Sent location");
+  if (v.acc) sub += " \u00b7 accuracy ~" + v.acc + " m";
+  if (v.spd > 1) sub += " \u00b7 moving ~" + Math.round(v.spd * 3.6) + " km/h";
+  if (mapFor !== "__me__" && mine && validPos(mine)) sub += "\nDistance from you: " + fmtDist(distM(mine, v));
+  if (live && typeof v.ts === "number" && nowS() - v.ts > 120000) sub += "\nTheir phone may have paused the app (screen off or app in background).";
   $("mapTitle").textContent = (v.name || "Location");
-  $("mapSub").textContent = "Updated " + ago(v.ts) + (v.acc ? " \u00b7 accuracy ~" + v.acc + " m" : "") +
-    (typeof v.ts === "number" && nowS() - v.ts > 120000 ? "\nTheir phone may have paused the app (screen off or app in background)." : "");
+  $("mapSub").textContent = sub;
   $("mapOpen").href = "https://www.google.com/maps?q=" + v.lat + "," + v.lng;
+
+  if (mapMode === "leaflet" && !lmap) initLeaflet(v);
+  if (mapMode === "leaflet" && lmap) {
+    const ll = [v.lat, v.lng];
+    const prev = trailPts.length ? trailPts[trailPts.length - 1] : null;
+    if (!prev || distM({ lat: prev[0], lng: prev[1] }, v) > 5) {
+      trailPts.push(ll); if (trailPts.length > 300) trailPts.shift();
+      lmTrail.setLatLngs(trailPts);
+      slideMarker(lmPartner, ll); lmAcc.setLatLng(ll);
+    }
+    lmAcc.setRadius(Math.max(5, v.acc || 20));
+    if (mine && validPos(mine) && mapFor !== "__me__") {
+      const ml = [mine.lat, mine.lng];
+      if (!lmMe) {
+        lmMeAcc = L.circle(ml, { radius: mine.acc || 20, color: "#1e88e5", weight: 1, fillOpacity: 0.1 }).addTo(lmap);
+        lmMe = L.circleMarker(ml, { radius: 8, color: "#fff", weight: 3, fillColor: "#1e88e5", fillOpacity: 1 }).addTo(lmap);
+      } else { lmMe.setLatLng(ml); lmMeAcc.setLatLng(ml); lmMeAcc.setRadius(Math.max(5, mine.acc || 20)); }
+    }
+    if (mapFirst) { mapFirst = false; if (mapFor === "__me__" || mapFor === "__pin__") lmap.setView(ll, 17); else fitBoth(); }
+    else if (live && !lmap.getBounds().pad(-0.2).contains(ll)) lmap.panTo(ll, { animate: true });
+    else if (mapFor === "__me__") lmap.panTo(ll, { animate: true });
+    return;
+  }
+
+  // fallback: simple embedded map (if the map library could not load)
   const now = Date.now();
   const moved = mapLast.t ? distM(mapLast, v) : Infinity;
   if (!mapLast.t || moved > 20 || now - mapLast.t > 30000) {
@@ -1919,7 +2111,7 @@ function writeLoc() {
   if (!myLocRef || !lastPos) return;
   lastWrite = nowS();
   const lr = myLocRef, lp = lastPos, until = shareUntil;
-  encStr(JSON.stringify({ name: me, lat: lp.lat, lng: lp.lng, acc: lp.acc || 0 }))
+  encStr(JSON.stringify({ name: me, lat: lp.lat, lng: lp.lng, acc: lp.acc || 0, spd: lp.spd || 0 }))
     .then((d) => set(lr, { d, ts: serverTimestamp(), until }))
     .then(() => { lastSentAt = nowS(); renderLocBar(); })
     .catch((e) => { note("Location not sent: " + ((e && (e.code || e.message)) || "error")); });
@@ -1929,9 +2121,12 @@ function onPos(p) {
   if (now >= shareUntil) { stopShare("Live location sharing ended."); return; }
   const lat = p.coords.latitude, lng = p.coords.longitude;
   const moved = lastPos ? distM(lastPos, { lat, lng }) : Infinity;
+  const acc = Math.round(p.coords.accuracy || 0);
+  // ignore a sudden very inaccurate fix (e.g. 2 km jump) when we just had a good one
+  if (lastPos && lastPos.acc && lastPos.acc < 60 && acc > 300 && now - lastWrite < 60000) return;
   if (now - lastWrite < 5000) return;
   if (moved < 10 && now - lastWrite < 30000) return;
-  lastPos = { lat, lng, acc: Math.round(p.coords.accuracy || 0) };
+  lastPos = { lat, lng, acc, spd: Math.max(0, Math.round((p.coords.speed || 0) * 10) / 10) };
   writeLoc();
 }
 function onPosErr(err) {
@@ -2003,6 +2198,21 @@ $("loc15").addEventListener("click", () => { $("locSheet").hidden = true; startS
 $("loc60").addEventListener("click", () => { $("locSheet").hidden = true; startShare(60, "1 hour"); });
 $("loc480").addEventListener("click", () => { $("locSheet").hidden = true; startShare(480, "8 hours"); });
 $("mapClose").addEventListener("click", closeMap);
+$("mapFit").addEventListener("click", fitBoth);
+$("mapMe").addEventListener("click", goMe);
+$("mapSat").addEventListener("click", toggleSat);
+$("locMe").addEventListener("click", () => { $("locSheet").hidden = true; openMyMap(); });
+// when the app comes back to the foreground, restart GPS and push a fresh position immediately
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) return;
+  if (watchId !== null) {
+    try { navigator.geolocation.clearWatch(watchId); } catch (e) {}
+    watchId = startWatch();
+    requestWake();
+    if (lastPos) writeLoc();
+  }
+  if (mapFor) { startMyMapWatch(); if (lmap) setTimeout(() => lmap && lmap.invalidateSize(), 200); }
+});
 
 /* =====================================================================
    v2: reactions, seen/typing, disappearing msgs, theme, app lock,
