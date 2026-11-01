@@ -80,11 +80,11 @@
   #join h1 { font-size: 30px; font-weight: 800; margin: 0 0 6px; }
   #join p { color: var(--muted); margin: 0 0 24px; }
   label { display: block; font-weight: 600; margin: 14px 0 6px; }
-  input[type="text"] {
+  input[type="text"], input[type="password"] {
     width: 100%; padding: 14px 16px; font: inherit; color: var(--ink);
     background: var(--panel); border: 1.5px solid var(--line); border-radius: 12px;
   }
-  input[type="text"]:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  input[type="text"]:focus-visible, input[type="password"]:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
   .hint { font-size: 14px; color: var(--muted); margin-top: 6px; }
   .primary {
     margin-top: 24px; width: 100%; padding: 14px; font: inherit; font-weight: 800;
@@ -199,6 +199,99 @@
   #msgMenu .acts button { flex: 1; font: inherit; font-size: 14px; font-weight: 800; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
   #msgMenu .acts .del { color: var(--error); }
 
+
+  /* ---- together features ---- */
+  .hbtns { gap: 6px; }
+  .hbtns button { padding: 6px 9px; }
+  #menuSheet { justify-content: flex-start; overflow-y: auto; padding-top: 28px; }
+  #menuSheet button { flex: none; }
+  #chat.buzzing { animation: buzzshake .6s; }
+  @keyframes buzzshake { 0%,100%{transform:translateX(0)} 12%{transform:translateX(-14px)} 25%{transform:translateX(14px)} 38%{transform:translateX(-11px)} 50%{transform:translateX(11px)} 62%{transform:translateX(-7px)} 75%{transform:translateX(7px)} 88%{transform:translateX(-3px)} }
+  #buzzFlash { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: rgba(0,0,0,.45); color: #fff; font-weight: 800; font-size: 22px; pointer-events: none; opacity: 0; transition: opacity .25s; }
+  #buzzFlash.on { opacity: 1; }
+  #buzzFlash b { font-size: 84px; line-height: 1; }
+  #moodGlow { position: fixed; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transition: opacity .8s, background .8s; }
+  #moodTag { font-size: 12px; font-weight: 600; opacity: .9; margin-left: 6px; }
+  #moodSheet .mgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 340px; }
+  #moodSheet .mgrid button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px; font-size: 13px; }
+  #moodSheet .mgrid button span { font-size: 30px; line-height: 1.1; }
+  #touchBody { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 20px; text-align: center; }
+  #touchPad { width: 230px; height: 230px; border-radius: 50%; border: 4px solid var(--mine); display: flex; align-items: center; justify-content: center; font-size: 86px; user-select: none; -webkit-user-select: none; touch-action: none; transition: background .2s, box-shadow .2s, transform .2s; -webkit-tap-highlight-color: transparent; }
+  #touchPad.hold { background: rgba(255,120,150,.18); transform: scale(1.04); }
+  #touchPad.both { background: rgba(255,80,120,.35); box-shadow: 0 0 60px 18px rgba(255,80,120,.55); animation: tpulse 1s infinite; }
+  @keyframes tpulse { 0%,100%{transform:scale(1.04)} 50%{transform:scale(1.14)} }
+  #touchMsg { font-size: 16px; font-weight: 700; max-width: 300px; }
+  #boss { position: fixed; inset: 0; z-index: 45; background: #1c1c1e; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); font-family: -apple-system, Roboto, Arial, sans-serif; }
+  #bossDisp { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; padding: 18px 22px; color: #fff; user-select: none; -webkit-user-select: none; }
+  #bossExpr { font-size: 22px; color: #9a9aa0; min-height: 28px; word-break: break-all; text-align: right; }
+  #bossRes { font-size: 64px; font-weight: 300; word-break: break-all; text-align: right; }
+  #bossKeys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px 14px 18px; }
+  #bossKeys button { height: 64px; border-radius: 50%; border: 0; font-size: 26px; background: #333336; color: #fff; cursor: pointer; }
+  #bossKeys button.op { background: #ff9f0a; }
+  #bossKeys button.fn { background: #a5a5a8; color: #000; }
+  #bossKeys button.zero { grid-column: span 2; border-radius: 40px; text-align: left; padding-left: 26px; }
+  #cpBody { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 20px; text-align: center; }
+  #cpDial { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--mine); position: relative; display: flex; align-items: center; justify-content: center; }
+  #cpDial::before { content: "N"; position: absolute; top: 4px; left: 50%; transform: translateX(-50%); font-weight: 800; font-size: 14px; opacity: .6; }
+  #cpArrow { font-size: 110px; line-height: 1; color: var(--mine); transition: transform .25s linear; }
+  #cpDist { font-size: 34px; font-weight: 800; }
+  #cpMsg { font-size: 14px; opacity: .8; max-width: 300px; white-space: pre-line; }
+
+  /* ---- mini games ---- */
+  #mgTabs { display: flex; gap: 6px; padding: 10px 12px 0; }
+  #mgTabs button { flex: 1; padding: 9px 4px; border-radius: 10px; border: 1.5px solid var(--mine); background: transparent; color: inherit; font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; }
+  #mgTabs button.on { background: var(--mine); color: #fff; }
+  #mgBody { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+  #mgBody button { padding: 12px 22px; border-radius: 12px; border: 0; background: var(--mine); color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+  #mgBody .mgs { font-size: 14px; opacity: .85; max-width: 320px; }
+  #mgBody .mgbig { font-size: 64px; line-height: 1.1; }
+  #mgBody .mgpick { display: flex; gap: 12px; }
+  #mgBody .mgpick button { font-size: 40px; padding: 14px 18px; }
+  #mgBody input { padding: 12px; font: inherit; font-size: 18px; width: 120px; text-align: center; border-radius: 10px; border: 1.5px solid var(--mine); background: transparent; color: inherit; }
+  #mgBody .mglist { width: 100%; max-width: 320px; text-align: left; font-size: 15px; display: flex; flex-direction: column; gap: 4px; }
+  #mgBody .mgbar { width: 100%; max-width: 320px; text-align: left; font-size: 13px; }
+  #mgBody .mgbar i { display: block; height: 14px; border-radius: 7px; background: var(--mine); margin-top: 3px; transition: width .15s; }
+  #mgBody .mgbar.o i { background: #e07b45; }
+  #mgBody .trtap { width: 200px; height: 200px; border-radius: 50% !important; font-size: 30px !important; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+
+  #mgTabs { display: none !important; }
+  #mgBody .mggrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 340px; }
+  #mgBody .mggrid button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 6px; font-size: 14px; }
+  #mgBody .mggrid button span { font-size: 32px; line-height: 1; }
+  #mgBody button.mgback { background: transparent; color: inherit; border: 1.5px solid var(--mine); padding: 6px 14px; font-size: 13px; align-self: flex-start; }
+  .c4 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; background: #1e5bb8; padding: 8px; border-radius: 12px; width: 100%; max-width: 320px; }
+  .c4c { aspect-ratio: 1; border-radius: 50%; background: #e8eef7; cursor: pointer; }
+  .c4c.red { background: #e53935; } .c4c.yel { background: #fdd835; }
+  .mmgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 320px; }
+  .mmc { aspect-ratio: 1; border-radius: 12px; background: var(--mine); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 34px; cursor: pointer; }
+  .mmc.open { background: #fff; border: 2px solid var(--mine); } .mmc.done { background: #c8e6c9; opacity: .8; }
+  .hmw { font-size: 30px; letter-spacing: 6px; font-weight: 800; }
+  .kb { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; max-width: 330px; }
+  .kb div { width: 34px; padding: 9px 0; border-radius: 8px; background: var(--mine); color: #fff; font-weight: 800; cursor: pointer; }
+  .kb div.used { opacity: .25; pointer-events: none; }
+  .opt { width: 100%; max-width: 320px; padding: 14px; border-radius: 12px; background: var(--mine); color: #fff; font-weight: 800; cursor: pointer; }
+  .opt.off { opacity: .35; pointer-events: none; }
+  .rxbox { width: 100%; max-width: 320px; height: 220px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; color: #fff; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+
+  /* ---- video message + video call ---- */
+  .vid { width: 240px; max-width: 100%; border-radius: 10px; display: block; background: #000; }
+  #vrLive, #vrPrev, #vidPlayEl { max-width: 100%; max-height: 62vh; border-radius: 12px; background: #000; }
+  #vidRec .row, #callChoice .row { flex-wrap: wrap; justify-content: center; }
+  #vidRec button.on, .oncebtn.on { background: #ffd54f; color: #000; }
+  #vrRec { background: #c62828; color: #fff; }
+  #vrSend { background: #2e7d32; color: #fff; }
+  #callChoice button { min-width: 220px; }
+  #callVoiceBtn { background: #fff; color: #111; }
+  #callVideoBtn { background: #2e7d32; color: #fff; }
+  #call .row { flex-wrap: wrap; justify-content: center; }
+  #call.vc { background: #000; }
+  #call .rv { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; display: none; background: #000; }
+  #call.vc .rv { display: block; }
+  #call #localVideo { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; width: 96px; height: 128px; object-fit: cover; border-radius: 12px; border: 2px solid #fff; z-index: 2; display: none; background: #222; }
+  #call.vc #localVideo { display: block; }
+  #call .callname, #call .callsub, #call .row { position: relative; z-index: 3; }
+  #call.vc .callname, #call.vc .callsub { text-shadow: 0 1px 6px #000; }
+  #callCam, #callFlip { background: #fff; color: #111; }
   .panel { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: flex; flex-direction: column;
     padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
   .phead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 16px; background: var(--mine); color: #fff; font-weight: 800; font-size: 18px; }
@@ -292,7 +385,9 @@
   <input id="name" type="text" maxlength="20" autocomplete="off" placeholder="e.g. Rahim">
   <label for="room">Secret room code</label>
   <input id="room" type="text" maxlength="30" autocomplete="off" autocapitalize="none" placeholder="e.g. blue-mango-47">
-  <div class="hint">Both of you must type the same code. Only people who know it can read the messages.</div>
+  <label for="pass">Password</label>
+  <input id="pass" type="password" maxlength="100" autocomplete="off" autocapitalize="none" placeholder="Shared password">
+  <div class="hint">Both of you must type the same room code and the same password. Messages are locked with the password on your phone, so nobody else (not even the database owner) can read them. If you forget it, old messages cannot be recovered.</div>
   <div class="error" id="joinError"></div>
   <button class="primary" id="joinBtn" type="button">Start chatting</button>
 </section>
@@ -300,10 +395,11 @@
 <section id="chat" class="screen">
   <header>
     <div>
-      <div class="title">Our Chat</div>
+      <div class="title"><span id="titleTxt">Our Chat</span><span id="moodTag"></span></div>
       <div class="sub" id="whoami"></div>
     </div>
     <div class="hbtns">
+      <button id="buzzBtn" type="button" aria-label="Buzz">&#128243;</button>
       <button id="callBtn" type="button" aria-label="Voice call">&#128222;</button>
       <button id="locBtn" type="button" aria-label="Share location">&#128205;</button>
       <button id="menuBtn" type="button" aria-label="Menu">&#8943;</button>
@@ -322,8 +418,10 @@
   <form id="composer" autocomplete="off">
     <button type="button" class="ico" id="emojiBtn" aria-label="Emoji">&#128522;</button>
     <input id="text" type="text" maxlength="1000" placeholder="Write a message" autocomplete="off">
+    <button type="button" class="ico" id="vidBtn" aria-label="Send video">&#127916;</button>
     <button type="button" class="ico" id="photoBtn" aria-label="Send photo">&#128247;</button>
     <button type="submit" id="textSendBtn" aria-label="Send" hidden>&#10148;</button>
+    <input type="file" id="audioPick" accept="audio/*" capture hidden>
     <button type="button" id="micBtn" aria-label="Record voice message">&#127908;</button>
   </form>
   <input id="photoInput" type="file" accept="image/*" hidden>
@@ -344,10 +442,14 @@
   <div class="row"><a id="mapOpen" class="abtn" target="_blank" rel="noopener noreferrer" href="#">Open in Google Maps</a><button id="mapClose" type="button">Close</button></div>
 </div>
 <div id="call" class="overlay" hidden>
+  <video id="remoteVideo" class="rv" autoplay playsinline muted></video>
+  <video id="localVideo" autoplay playsinline muted></video>
   <div class="callname" id="callTitle"></div>
   <div class="callsub" id="callSub"></div>
   <div class="row">
     <button id="callMute" type="button">Mute</button>
+    <button id="callCam" type="button" hidden>Camera off</button>
+    <button id="callFlip" type="button" hidden>Flip</button>
     <button id="callDecline" type="button">Decline</button>
     <button id="callAccept" type="button">Accept</button>
     <button id="callEnd" type="button">End call</button>
@@ -365,11 +467,84 @@
 </div>
 
 
+<div id="moodGlow"></div>
+<div id="buzzFlash"><b>&#128243;</b><span id="buzzWho"></span></div>
+
+<div id="moodSheet" class="overlay" hidden>
+  <div class="callname">How are you feeling?</div>
+  <div class="mgrid" id="moodGrid"></div>
+  <button id="moodClear" type="button">Clear mood</button>
+  <button id="moodClose" type="button">Close</button>
+</div>
+
+<div id="touchPanel" class="panel" hidden>
+  <div class="phead"><span>&#128158; Touch together</span><button id="touchClose" type="button">Close</button></div>
+  <div id="touchBody">
+    <div id="touchPad"><span id="touchIcon">&#129293;</span></div>
+    <div id="touchMsg"></div>
+  </div>
+</div>
+
+<div id="compass" class="panel" hidden>
+  <div class="phead"><span>&#129517; Distance &amp; compass</span><button id="cpClose" type="button">Close</button></div>
+  <div id="cpBody">
+    <div id="cpDial"><div id="cpArrow">&#10148;</div></div>
+    <div id="cpDist">--</div>
+    <div id="cpMsg"></div>
+  </div>
+</div>
+
+<div id="boss" hidden>
+  <div id="bossDisp"><div id="bossExpr"></div><div id="bossRes">0</div></div>
+  <div id="bossKeys"></div>
+</div>
+
+<div id="mgPanel" class="panel" hidden>
+  <div class="phead"><span>&#127922; Mini games</span><button id="mgClose" type="button">Close</button></div>
+  <div id="mgTabs">
+    <button type="button" data-t="rps">&#9994; Rock Paper</button>
+    <button type="button" data-t="ng">&#128290; Guess</button>
+    <button type="button" data-t="tr">&#9889; Tap race</button>
+  </div>
+  <div class="pbody" id="mgBody"></div>
+</div>
+
+<div id="callChoice" class="overlay" hidden>
+  <div class="callname">Call</div>
+  <button id="callVoiceBtn" type="button">&#128222; Voice call</button>
+  <button id="callVideoBtn" type="button">&#128249; Video call</button>
+  <button id="callChoiceCancel" type="button">Cancel</button>
+</div>
+
+<div id="vidRec" class="overlay" hidden>
+  <video id="vrLive" autoplay playsinline muted></video>
+  <video id="vrPrev" playsinline controls hidden></video>
+  <div class="callsub" id="vrTime">0:00 / 0:10</div>
+  <div class="row">
+    <button id="vrFlip" type="button">Flip</button>
+    <button id="vrRec" type="button">&#9679; Record</button>
+    <button id="vrOnce" type="button" class="oncebtn">1&#215; Off</button>
+    <button id="vrRetake" type="button" hidden>Retake</button>
+    <button id="vrSend" type="button" hidden>Send</button>
+    <button id="vrCancel" type="button">Cancel</button>
+  </div>
+</div>
+<div id="vidPlay" class="overlay" hidden>
+  <video id="vidPlayEl" controls playsinline></video>
+  <div class="callsub">View once. It cannot be played again.</div>
+  <button id="vidPlayClose" type="button">Close</button>
+</div>
+
 <div id="menuSheet" class="overlay" hidden>
   <div class="callname">Menu</div>
   <button id="mnDraw" type="button">&#127912; Drawing board</button>
   <button id="mnGame" type="button">&#127918; Tic-Tac-Toe</button>
+  <button id="mnMG" type="button">&#127922; Mini games</button>
   <button id="mnTodo" type="button">&#128221; Shared list</button>
+  <button id="mnTouch" type="button">&#128158; Touch together</button>
+  <button id="mnMood" type="button">&#127917; Mood color</button>
+  <button id="mnCompass" type="button">&#129517; Distance &amp; compass</button>
+  <button id="mnBoss" type="button">&#129518; Boss mode</button>
   <button id="mnSettings" type="button">&#9881;&#65039; Settings</button>
   <button id="mnLock" type="button" hidden>&#128274; Lock now</button>
   <button id="leaveBtn" type="button">Leave room</button>
@@ -433,13 +608,7 @@
     </div>
     <div class="card">
       <h3>Disappearing messages</h3>
-      <div class="seg" id="segTtl">
-        <button type="button" data-v="0">Off</button>
-        <button type="button" data-v="1800000">30 min</button>
-        <button type="button" data-v="3600000">1 hour</button>
-        <button type="button" data-v="86400000">24 hours</button>
-      </div>
-      <div class="hint">Applies to both of you. Every message (and photo or voice) deletes itself from the app and the database after this time. Default is 30 minutes.</div>
+      <div class="hint">Locked: every message (and photo, voice, video) is deleted from the app and the database 30 minutes after it is sent.</div>
     </div>
     <div class="card">
       <h3>Troubleshoot</h3>
@@ -498,6 +667,126 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
+/* ---------- End-to-end encryption ----------
+   AES-GCM 256. The key is made from the shared password on this phone and kept only in memory.
+   The password and key are never written to Firebase, GitHub or this phone's storage. */
+const E2 = "e1:";
+let ekey = null;
+const dcache = new Map();
+function b64(u8) { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+function unb64(s) { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+async function deriveKey(pass, roomCode) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: new TextEncoder().encode("our-chat-e2ee-v1|" + roomCode), iterations: 300000, hash: "SHA-256" },
+    base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+async function encStr(str) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, ekey, new TextEncoder().encode(String(str))));
+  const out = new Uint8Array(12 + ct.length);
+  out.set(iv); out.set(ct, 12);
+  return E2 + b64(out);
+}
+async function decStr(str) {
+  if (typeof str !== "string" || !str.startsWith(E2) || !ekey) return null;
+  if (dcache.has(str)) return dcache.get(str);
+  try {
+    const raw = unb64(str.slice(E2.length));
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: raw.subarray(0, 12) }, ekey, raw.subarray(12));
+    const out = new TextDecoder().decode(pt);
+    if (str.length < 20000) { if (dcache.size > 3000) dcache.clear(); dcache.set(str, out); }
+    return out;
+  } catch (e) { return null; }
+}
+// Runs the decrypt step in order, then hands the result to the handler
+function ordered(decFn, handler) {
+  let chain = Promise.resolve();
+  return (snap) => {
+    const raw = snap.val();
+    chain = chain.then(() => decFn(raw)).then((v) => { handler(snap, v); }).catch((e) => console.error(e));
+  };
+}
+const MSG_ENC = ["name", "text", "img", "audio", "video"];
+async function encMsg(o) {
+  const out = Object.assign({}, o);
+  for (const k of MSG_ENC) if (typeof out[k] === "string") out[k] = await encStr(out[k]);
+  if (out.loc && typeof out.loc === "object") out.loc = await encStr(JSON.stringify(out.loc));
+  return out;
+}
+async function decMsg(m) {
+  if (!m || typeof m !== "object") return null;
+  if (m.del) return m;
+  if (typeof m.name !== "string" || !m.name.startsWith(E2)) return null; // old unencrypted message: hidden
+  const out = Object.assign({}, m);
+  let bad = false;
+  for (const k of MSG_ENC) {
+    if (typeof m[k] === "string") { const v = await decStr(m[k]); if (v === null) bad = true; out[k] = v; }
+  }
+  if (typeof m.loc === "string") {
+    const v = await decStr(m.loc);
+    try { out.loc = JSON.parse(v); } catch (e) { bad = true; out.loc = null; }
+  } else if (m.loc) { out.loc = null; bad = true; }
+  if (m.rx && typeof m.rx === "object") {
+    const r = {};
+    for (const c of Object.keys(m.rx)) { const v = await decStr(m.rx[c]); if (v !== null) r[c] = v; }
+    out.rx = r;
+  } else out.rx = null;
+  if (bad) return { name: "\u26a0", text: "\ud83d\udd12 This message could not be decrypted.", ts: m.ts, ttl: m.ttl };
+  return out;
+}
+async function decTodo(raw) {
+  const out = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const k of Object.keys(raw)) {
+    const it = raw[k];
+    if (!it || typeof it.t !== "string") continue;
+    const t = await decStr(it.t);
+    if (t === null) continue;
+    const by = typeof it.by === "string" ? await decStr(it.by) : null;
+    const dby = typeof it.dby === "string" ? await decStr(it.dby) : null;
+    out[k] = { t, by: by || "", done: !!it.done, dby: dby || "", ts: it.ts };
+  }
+  return out;
+}
+async function decStrokes(raw) {
+  const out = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const k of Object.keys(raw)) {
+    const st = raw[k];
+    if (!st || typeof st !== "object") continue;
+    const p = await decStr(st.p);
+    out[k] = Object.assign({}, st, { p: p === null ? "" : p });
+  }
+  return out;
+}
+async function decLoc(raw) {
+  const out = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const k of Object.keys(raw)) {
+    const it = raw[k];
+    if (!it || typeof it.d !== "string") continue;
+    const d = await decStr(it.d);
+    if (d === null) continue;
+    try { const o = JSON.parse(d); out[k] = Object.assign({}, o, { ts: it.ts, until: it.until }); } catch (e) {}
+  }
+  return out;
+}
+async function decSd(x) {
+  if (!x || typeof x.sdp !== "string") return null;
+  const s = await decStr(x.sdp);
+  return s === null ? null : { type: x.type, sdp: s };
+}
+async function decCall(v) {
+  if (!v || typeof v !== "object") return v;
+  const o = Object.assign({}, v);
+  const off = await decSd(v.offer); if (off) o.offer = off; else delete o.offer;
+  const ans = await decSd(v.answer); if (ans) o.answer = ans; else delete o.answer;
+  if (v.re) { const x = await decSd(v.re.offer); if (x) o.re = { n: v.re.n, offer: x }; else delete o.re; }
+  if (v.rea) { const x = await decSd(v.rea.answer); if (x) o.rea = { n: v.rea.n, answer: x }; else delete o.rea; }
+  return o;
+}
 
 const $ = (id) => document.getElementById(id);
 const joinScreen = $("join"), chatScreen = $("chat");
@@ -603,18 +892,18 @@ function makeBubble(key, m) {
       const d = document.createElement("div");
       d.className = "text";
       d.style.fontStyle = "italic";
-      d.textContent = "\ud83d\udc41 Opened " + (m.ot === "audio" ? "voice message" : "photo");
+      d.textContent = "\ud83d\udc41 Opened " + onceI(m.ot)[2];
       wrap.appendChild(d);
     } else if (mine) {
       const d = document.createElement("div");
       d.className = "text";
-      d.textContent = (m.ot === "audio" ? "\ud83c\udfa4 Voice message" : "\ud83d\udcf7 Photo") + " \u00b7 view once \u00b7 not opened yet";
+      d.textContent = (onceI(m.ot)[0] + " " + onceI(m.ot)[1]) + " \u00b7 view once \u00b7 not opened yet";
       wrap.appendChild(d);
     } else {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "openbtn";
-      b.textContent = (m.ot === "audio" ? "\ud83c\udfa4 Tap to play" : "\ud83d\udcf7 Tap to view") + " \u00b7 1 time only";
+      b.textContent = (onceI(m.ot)[0] + " " + onceI(m.ot)[3]) + " \u00b7 1 time only";
       b.addEventListener("click", () => openOnce(key));
       wrap.appendChild(b);
     }
@@ -634,6 +923,12 @@ function makeBubble(key, m) {
     a.preload = "metadata";
     a.src = m.audio;
     wrap.appendChild(a);
+  }
+  if (!m.once && typeof m.video === "string" && m.video.startsWith("data:video/")) {
+    const v = document.createElement("video");
+    v.className = "vid"; v.controls = true; v.playsInline = true; v.preload = "metadata";
+    v.src = m.video;
+    wrap.appendChild(v);
   }
   if (m.loc && Number.isFinite(m.loc.lat) && Number.isFinite(m.loc.lng) && Math.abs(m.loc.lat) <= 90 && Math.abs(m.loc.lng) <= 180) {
     const a = document.createElement("a");
@@ -698,11 +993,11 @@ function enterRoom() {
   const q = query(roomRef, limitToLast(50));
   unsubs.forEach((u) => u());
   unsubs = [];
-  unsubs.push(onChildAdded(q, (snap) => renderMessage(snap.key, snap.val()), (err) => {
+  unsubs.push(onChildAdded(q, ordered(decMsg, (snap, m) => renderMessage(snap.key, m)), (err) => {
     $("status").textContent = "Cannot read messages. Check your Firebase rules and internet.";
     console.error(err);
   }));
-  unsubs.push(onChildChanged(q, (snap) => updateMessage(snap.key, snap.val())));
+  unsubs.push(onChildChanged(q, ordered(decMsg, (snap, m) => updateMessage(snap.key, m))));
   // When the chat is cleared (by either person), empty the screen
   let ctlFirst = true;
   unsubs.push(onValue(ref(db, "rooms/" + room + "~ctl"), () => {
@@ -727,21 +1022,49 @@ function leaveRoom() {
   unsubs.forEach((u) => u());
   unsubs = [];
   roomRef = null;
+  ekey = null; dcache.clear();
   safeDel("chat.room");
   show("join");
 }
 
-$("joinBtn").addEventListener("click", () => {
+$("joinBtn").addEventListener("click", async () => {
   const name = $("name").value.trim();
   const code = cleanRoom($("room").value);
+  const pw = $("pass").value;
   if (!name) { $("joinError").textContent = "Please enter your name."; return; }
   if (code.length < 4) { $("joinError").textContent = "The room code needs at least 4 characters."; return; }
+  if (pw.length < 8) { $("joinError").textContent = "The password needs at least 8 characters."; return; }
+  if (!window.crypto || !crypto.subtle) { $("joinError").textContent = "Encryption is not available here. Open the https website link in Chrome or Safari."; return; }
+  const btn = $("joinBtn");
+  btn.disabled = true;
+  $("joinError").textContent = "Checking password...";
+  try {
+    const key = await deriveKey(pw, code);
+    ekey = key;
+    const chk = ref(db, "rooms/" + code + "~chk");
+    const cur = (await get(chk)).val();
+    if (typeof cur === "string") {
+      const ok = await decStr(cur);
+      if (ok !== "e2ee-ok") { ekey = null; $("joinError").textContent = "Wrong password for this room."; btn.disabled = false; return; }
+    } else {
+      await set(chk, await encStr("e2ee-ok"));
+    }
+  } catch (err) {
+    console.error(err);
+    ekey = null;
+    $("joinError").textContent = "Could not check the password. Check your internet and try again.";
+    btn.disabled = false;
+    return;
+  }
+  btn.disabled = false;
+  $("pass").value = "";
   $("joinError").textContent = "";
   me = name; room = code;
   safeSet("chat.name", me);
   safeSet("chat.room", room);
   enterRoom();
 });
+$("pass").addEventListener("keydown", (e) => { if (e.key === "Enter") $("joinBtn").click(); });
 
 $("leaveBtn").addEventListener("click", async () => {
   $("menuSheet").hidden = true;
@@ -752,7 +1075,7 @@ $("leaveBtn").addEventListener("click", async () => {
   try {
     await set(ref(db, "rooms/" + room + "~ctl"), { ts: Date.now() });
     await remove(r);
-    await Promise.all(["~draw", "~game", "~seen", "~typing"].map((x) => remove(ref(db, "rooms/" + room + x))));
+    await Promise.all(["~draw", "~game", "~seen", "~typing", "~fx", "~mg", "~chk", "~todo", "~call"].map((x) => remove(ref(db, "rooms/" + room + x))));
   } catch (err) {
     $("status").textContent = "Could not delete messages. Check your internet and try again.";
     console.error(err);
@@ -764,7 +1087,8 @@ $("leaveBtn").addEventListener("click", async () => {
 async function sendMsg(extra) {
   if (!roomRef) return false;
   try {
-    await push(roomRef, Object.assign({ name: me }, ttlMs > 0 ? { ttl: ttlMs } : {}, extra, { ts: serverTimestamp() }));
+    const body = await encMsg(Object.assign({ name: me }, extra));
+    await push(roomRef, Object.assign(body, ttlMs > 0 ? { ttl: ttlMs } : {}, { ts: serverTimestamp() }));
     $("status").textContent = "";
     return true;
   } catch (err) {
@@ -899,8 +1223,10 @@ function pickMime() {
 }
 function fmtDur(sec) { return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
 
+let micBlocked = false;
 async function startRec() {
   if (rec) return;
+  if (micBlocked) { $("audioPick").value = ""; $("audioPick").click(); return; }
   if (!window.MediaRecorder || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     $("status").textContent = "Voice messages are not supported in this browser.";
     return;
@@ -909,7 +1235,8 @@ async function startRec() {
   try {
     recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (err) {
-    micFail(err, "voice");
+    micBlocked = true;
+    showHelp("Browser mic is blocked", micErrorText(err) + "\n\nWORKAROUND: tap the mic button again. Your phone's own voice recorder will open. Record, save, and the message is sent from here.");
     return;
   }
   const mime = pickMime();
@@ -976,6 +1303,23 @@ async function onRecStop() {
 }
 
 $("micBtn").addEventListener("click", startRec);
+$("audioPick").addEventListener("change", async () => {
+  const f = $("audioPick").files && $("audioPick").files[0];
+  if (!f) return;
+  if (f.size > 1400000) { $("status").textContent = "Recording too big. Keep it under about 1 minute."; return; }
+  try {
+    const url = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(f); });
+    const dur = await new Promise((res) => {
+      const a = new Audio(); a.preload = "metadata"; a.src = URL.createObjectURL(f);
+      a.onloadedmetadata = () => res(isFinite(a.duration) ? Math.round(a.duration) : 0);
+      a.onerror = () => res(0);
+      setTimeout(() => res(0), 3000);
+    });
+    $("status").textContent = "Sending voice message...";
+    await sendMsg(Object.assign({ audio: url, dur: dur || 1 }, onceNext ? { once: true, ot: "audio" } : {}));
+    resetOnce();
+  } catch (e) { showHelp("Voice message", fbErr(e)); }
+});
 $("recCancel").addEventListener("click", () => stopRec(false));
 $("recSend").addEventListener("click", () => stopRec(true));
 
@@ -988,14 +1332,44 @@ const cid = (() => {
   return v;
 })();
 const callCid = Math.random().toString(36).slice(2) + Date.now().toString(36); // per page load, so two tabs can call each other
-const ICE = { iceServers: [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
-  { urls: ["turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turn:openrelay.metered.ca:443?transport=tcp"],
-    username: "openrelayproject", credential: "openrelayproject" }
-] };
+const ICE = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun.cloudflare.com:3478" },
+    { urls: "stun:openrelay.metered.ca:80" },
+    { urls: [
+        "turn:openrelay.metered.ca:80",
+        "turn:openrelay.metered.ca:80?transport=tcp",
+        "turn:openrelay.metered.ca:443",
+        "turns:openrelay.metered.ca:443?transport=tcp"
+      ], username: "openrelayproject", credential: "openrelayproject" }
+  ],
+  iceCandidatePoolSize: 4,
+  bundlePolicy: "max-bundle",
+  rtcpMuxPolicy: "require"
+};
+
+/* Clearer voice: Opus tuned for speech (mono, forward error correction, steady bitrate, no DTX cut-outs) */
+function tuneOpus(sdp) {
+  const m = sdp.match(/a=rtpmap:(\d+) opus\/48000\/2/);
+  if (!m) return sdp;
+  const pt = m[1];
+  const extra = "useinbandfec=1;usedtx=0;stereo=0;sprop-stereo=0;maxaveragebitrate=48000;maxplaybackrate=48000;minptime=10;cbr=0";
+  const re = new RegExp("a=fmtp:" + pt + " ([^\\r\\n]*)");
+  if (re.test(sdp)) {
+    return sdp.replace(re, (all, params) => {
+      const keep = params.split(";").filter((x) => !/^(useinbandfec|usedtx|stereo|sprop-stereo|maxaveragebitrate|maxplaybackrate|minptime|cbr)=/.test(x.trim()) && x.trim());
+      return "a=fmtp:" + pt + " " + keep.concat(extra).join(";");
+    });
+  }
+  return sdp.replace(m[0], m[0] + "\r\na=fmtp:" + pt + " " + extra);
+}
+
 let callPhase = "idle", pc = null, localStream = null, callRef = null;
 let incomingOffer = null, remoteSet = false, callWritten = false;
+let callVideo = false, camFacing = "user";
 let callTimer = null, ringTimer = null, noAnswerTimer = null, callStartAt = 0, audioCtx = null;
 
 function note(msg) {
@@ -1005,14 +1379,17 @@ function note(msg) {
 
 function showCall(phase, who) {
   $("call").hidden = false;
+  $("call").classList.toggle("vc", callVideo);
   $("callAccept").hidden = phase !== "incoming";
   $("callDecline").hidden = phase !== "incoming";
   $("callMute").hidden = phase !== "active";
+  $("callCam").hidden = !(callVideo && phase === "active");
+  $("callFlip").hidden = !(callVideo && phase === "active");
   $("callEnd").hidden = phase === "incoming";
-  if (phase === "calling") { $("callTitle").textContent = "Calling..."; $("callSub").textContent = "Waiting for an answer"; }
-  if (phase === "incoming") { $("callTitle").textContent = who || "Incoming call"; $("callSub").textContent = "is calling you"; }
+  if (phase === "calling") { $("callTitle").textContent = callVideo ? "Video calling..." : "Calling..."; $("callSub").textContent = "Waiting for an answer"; }
+  if (phase === "incoming") { $("callTitle").textContent = (callVideo ? "\u{1F4F9} " : "") + (who || "Incoming call"); $("callSub").textContent = callVideo ? "is video calling you" : "is calling you"; }
   if (phase === "connecting") { $("callTitle").textContent = "Connecting..."; $("callSub").textContent = "Please wait"; }
-  if (phase === "active") { $("callTitle").textContent = "On call"; }
+  if (phase === "active") { $("callTitle").textContent = callVideo ? "Video call" : "On call"; }
 }
 
 function unlockAudio() {
@@ -1046,17 +1423,29 @@ function stopRing() { clearInterval(ringTimer); ringTimer = null; }
 function waitIce(conn, ms) {
   return new Promise((res) => {
     if (conn.iceGatheringState === "complete") return res();
-    const t = setTimeout(done, ms || 4000);
+    const t = setTimeout(done, ms || 5000);
     function done() { clearTimeout(t); conn.removeEventListener("icegatheringstatechange", chk); res(); }
     function chk() { if (conn.iceGatheringState === "complete") done(); }
     conn.addEventListener("icegatheringstatechange", chk);
   });
 }
 
-async function getMic() {
+async function getMic(video) {
+  const audio = { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1, sampleRate: 48000 };
   try {
-    return await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    return await navigator.mediaDevices.getUserMedia({
+      audio,
+      video: video ? { facingMode: camFacing, width: { ideal: 480 }, height: { ideal: 640 }, frameRate: { ideal: 24, max: 30 } } : false
+    });
   } catch (e) {
+    if (video && e && e.name !== "NotAllowedError" && e.name !== "PermissionDeniedError" && e.name !== "SecurityError") {
+      try {
+        const st = await navigator.mediaDevices.getUserMedia({ audio });
+        callVideo = false;
+        note("Camera not available. Voice call only.");
+        return st;
+      } catch (e2) { e = e2; }
+    }
     micFail(e, "call");
     return null;
   }
@@ -1070,7 +1459,7 @@ function goActive() {
   showCall("active");
   clearInterval(callTimer);
   callTimer = setInterval(() => {
-    $("callSub").textContent = fmtDur(Math.floor((Date.now() - callStartAt) / 1000));
+    $("callSub").textContent = reconnecting ? "Reconnecting..." : fmtDur(Math.floor((Date.now() - callStartAt) / 1000));
   }, 500);
   $("callSub").textContent = "0:00";
 }
@@ -1084,9 +1473,13 @@ function finishCall(msg, removeNode) {
   if (pc) { try { pc.close(); } catch (e) {} pc = null; }
   if (localStream) { localStream.getTracks().forEach((t) => t.stop()); localStream = null; }
   $("remoteAudio").srcObject = null;
+  $("remoteVideo").srcObject = null; $("localVideo").srcObject = null;
+  $("call").classList.remove("vc"); callVideo = false; $("callCam").textContent = "Camera off";
   $("call").hidden = true;
   $("callMute").textContent = "Mute";
   remoteSet = false; callWritten = false; incomingOffer = null;
+  reconnecting = false; reBusy = false; reN = 0; lastReN = 0; lastRq = 0; reTries = 0;
+  clearTimeout(reTimer); clearTimeout(reGiveUp);
   if (msg) note(msg);
   if (removeNode && callRef) {
     const r = callRef;
@@ -1095,26 +1488,164 @@ function finishCall(msg, removeNode) {
   }
 }
 
+/* ---------- auto reconnect when the network changes or drops ---------- */
+let isCaller = false, reN = 0, lastReN = 0, lastRq = 0, reBusy = false;
+let reconnecting = false, reTimer = null, reTries = 0, reGiveUp = null;
+
+function setReconnecting(on) {
+  if (on === reconnecting) return;
+  reconnecting = on;
+  if (on) {
+    $("callSub").textContent = "Reconnecting...";
+    clearTimeout(reGiveUp);
+    reGiveUp = setTimeout(() => { if (reconnecting) finishCall("Call lost.", true); }, 45000);
+  } else {
+    clearTimeout(reGiveUp);
+    clearTimeout(reTimer);
+    reTries = 0;
+  }
+}
+
+async function callerRestart() {
+  if (!isCaller || reBusy || !pc || callPhase !== "active") return;
+  reBusy = true;
+  try {
+    reN += 1;
+    const off = await pc.createOffer({ iceRestart: true });
+    off.sdp = tuneOpus(off.sdp);
+    await pc.setLocalDescription(off);
+    await waitIce(pc, 4000);
+    if (!pc) return;
+    const ld = pc.localDescription;
+    const n = reN;
+    const eOff = { type: ld.type, sdp: await encStr(ld.sdp) };
+    await runTransaction(callRef, (cur) => {
+      if (!cur) return undefined;
+      cur.re = { n, offer: eOff };
+      delete cur.rea;
+      return cur;
+    });
+  } catch (e) { console.error(e); }
+  reBusy = false;
+}
+
+async function calleeRequestRestart() {
+  try {
+    await runTransaction(callRef, (cur) => {
+      if (!cur) return undefined;
+      cur.rq = Date.now();
+      return cur;
+    });
+  } catch (e) { console.error(e); }
+}
+
+function tryReconnect() {
+  if (callPhase !== "active" || !pc) return;
+  setReconnecting(true);
+  reTries += 1;
+  if (isCaller) callerRestart(); else calleeRequestRestart();
+  clearTimeout(reTimer);
+  // keep trying every 7 seconds until it works (or gives up after 45 s)
+  reTimer = setTimeout(() => { if (reconnecting && callPhase === "active") { reBusy = false; tryReconnect(); } }, 7000);
+}
+
+async function calleeHandleRestart(re) {
+  if (!pc || !re || re.n <= lastReN) return;
+  lastReN = re.n;
+  try {
+    if (pc.signalingState !== "stable") { try { await pc.setLocalDescription({ type: "rollback" }); } catch (e) {} }
+    await pc.setRemoteDescription({ type: re.offer.type, sdp: re.offer.sdp });
+    const ans = await pc.createAnswer();
+    ans.sdp = tuneOpus(ans.sdp);
+    await pc.setLocalDescription(ans);
+    await waitIce(pc, 4000);
+    if (!pc) return;
+    const ld = pc.localDescription;
+    const n = re.n;
+    const eAns = { type: ld.type, sdp: await encStr(ld.sdp) };
+    await runTransaction(callRef, (cur) => {
+      if (!cur) return undefined;
+      cur.rea = { n, answer: eAns };
+      return cur;
+    });
+  } catch (e) { console.error(e); }
+}
+
+async function callerHandleAnswer(rea) {
+  if (!pc || !rea || rea.n !== reN || pc.signalingState !== "have-local-offer") return;
+  try { await pc.setRemoteDescription({ type: rea.answer.type, sdp: rea.answer.sdp }); }
+  catch (e) { console.error(e); }
+  reBusy = false;
+}
+
+function onNetChange() {
+  if (callPhase !== "active" || !pc) return;
+  // network just changed (WiFi <-> mobile data): refresh the route shortly after it settles
+  clearTimeout(window.__netT);
+  window.__netT = setTimeout(() => { if (callPhase === "active") tryReconnect(); }, 1200);
+}
+window.addEventListener("online", onNetChange);
+window.addEventListener("offline", () => { if (callPhase === "active") setReconnecting(true); });
+if (navigator.connection && navigator.connection.addEventListener) navigator.connection.addEventListener("change", onNetChange);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && callPhase === "active" && pc && pc.connectionState !== "connected") tryReconnect(); });
+
 function makePc(stream) {
   pc = new RTCPeerConnection(ICE);
-  stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+  stream.getTracks().forEach((t) => { try { t.contentHint = t.kind === "audio" ? "speech" : "motion"; } catch (e) {} pc.addTrack(t, stream); });
+  if (stream.getVideoTracks().length) { const lv = $("localVideo"); lv.srcObject = stream; lv.style.transform = camFacing === "user" ? "scaleX(-1)" : "none"; lv.play().catch(() => {}); }
+  pc.getSenders().forEach((snd) => {
+    if (snd.track && snd.track.kind === "video") {
+      try {
+        const vp = snd.getParameters();
+        if (!vp.encodings || !vp.encodings.length) vp.encodings = [{}];
+        vp.encodings[0].maxBitrate = 450000;
+        vp.encodings[0].maxFramerate = 24;
+        snd.setParameters(vp).catch(() => {});
+      } catch (e) {}
+      return;
+    }
+    if (!snd.track || snd.track.kind !== "audio") return;
+    try {
+      const prm = snd.getParameters();
+      if (!prm.encodings || !prm.encodings.length) prm.encodings = [{}];
+      prm.encodings[0].maxBitrate = 48000;
+      prm.encodings[0].priority = "high";
+      prm.encodings[0].networkPriority = "high";
+      snd.setParameters(prm).catch(() => {});
+    } catch (e) {}
+  });
   pc.ontrack = (e) => {
+    if (e.track.kind === "video") {
+      const rv = $("remoteVideo");
+      rv.srcObject = (e.streams && e.streams[0]) || new MediaStream([e.track]);
+      rv.play().catch(() => {});
+      return;
+    }
     const a = $("remoteAudio");
-    a.srcObject = e.streams[0];
-    a.play().catch(() => {});
+    a.srcObject = (e.streams && e.streams[0]) || new MediaStream([e.track]);
+    a.volume = 1;
+    a.play().catch(() => {
+      const retry = () => { a.play().catch(() => {}); document.removeEventListener("pointerdown", retry); };
+      document.addEventListener("pointerdown", retry);
+    });
   };
   pc.onconnectionstatechange = () => {
     if (!pc) return;
     const st = pc.connectionState;
-    if (st === "connected" && callPhase !== "active") goActive();
-    else if (st === "failed") finishCall("Could not connect. Try Wi-Fi on one phone.", true);
-    else if (st === "disconnected") {
-      setTimeout(() => { if (pc && pc.connectionState === "disconnected") finishCall("Call lost.", true); }, 6000);
+    if (st === "connected") {
+      if (callPhase !== "active") goActive();
+      else if (reconnecting) setReconnecting(false);
+    } else if (st === "failed") {
+      if (callPhase === "active") tryReconnect();
+      else finishCall("Could not connect. Try Wi-Fi on one phone.", true);
+    } else if (st === "disconnected" && callPhase === "active") {
+      setReconnecting(true);
+      setTimeout(() => { if (pc && callPhase === "active" && pc.connectionState !== "connected") tryReconnect(); }, 2500);
     }
   };
 }
 
-async function startCall() {
+async function startCall(video) {
   if (!roomRef || callPhase !== "idle") return;
   if (!window.RTCPeerConnection || !navigator.mediaDevices) { note("Calls are not supported in this browser."); return; }
   closeEmoji();
@@ -1126,20 +1657,23 @@ async function startCall() {
       return;
     }
   } catch (e) {}
-  const stream = await getMic();
-  if (!stream) return;
+  callVideo = !!video;
+  const stream = await getMic(callVideo);
+  if (!stream) { callVideo = false; return; }
   if (callPhase !== "idle") { stream.getTracks().forEach((t) => t.stop()); return; }
   callPhase = "calling";
+  isCaller = true;
   localStream = stream;
   showCall("calling");
   try {
     makePc(stream);
-    await pc.setLocalDescription(await pc.createOffer());
+    { const off = await pc.createOffer(); off.sdp = tuneOpus(off.sdp); await pc.setLocalDescription(off); }
     await waitIce(pc);
     if (callPhase !== "calling" || !pc) return;
     const ld = pc.localDescription;
+    const eOffer = { type: ld.type, sdp: await encStr(ld.sdp) };
     await onDisconnect(callRef).remove();
-    await set(callRef, { cid: callCid, name: me, state: "ringing", ts: Date.now(), offer: { type: ld.type, sdp: ld.sdp } });
+    await set(callRef, { cid: callCid, name: me, state: "ringing", video: callVideo, ts: Date.now(), offer: eOffer });
     if (callPhase !== "calling") { remove(callRef).catch(() => {}); return; }
     callWritten = true;
     noAnswerTimer = setTimeout(() => finishCall("No answer.", true), 45000);
@@ -1153,24 +1687,26 @@ async function startCall() {
 async function acceptCall() {
   if (callPhase !== "incoming" || !incomingOffer) return;
   stopRing();
-  const stream = await getMic();
+  const stream = await getMic(callVideo);
   if (!stream) { finishCall("", true); return; }
   if (callPhase !== "incoming") { stream.getTracks().forEach((t) => t.stop()); return; }
   callPhase = "connecting";
+  isCaller = false;
   localStream = stream;
   showCall("connecting");
   try {
     makePc(stream);
     await pc.setRemoteDescription({ type: incomingOffer.type, sdp: incomingOffer.sdp });
-    await pc.setLocalDescription(await pc.createAnswer());
+    { const ans = await pc.createAnswer(); ans.sdp = tuneOpus(ans.sdp); await pc.setLocalDescription(ans); }
     await waitIce(pc);
     if (callPhase !== "connecting" || !pc) return;
     const ld = pc.localDescription;
+    const eAns = { type: ld.type, sdp: await encStr(ld.sdp) };
     await onDisconnect(callRef).remove();
     const res = await runTransaction(callRef, (cur) => {
       if (!cur) return undefined;
       cur.state = "active";
-      cur.answer = { type: ld.type, sdp: ld.sdp };
+      cur.answer = eAns;
       return cur;
     });
     if (!res.committed) finishCall("Call ended.", false);
@@ -1183,8 +1719,7 @@ async function acceptCall() {
 
 function startCallListener() {
   callRef = ref(db, "rooms/" + room + "~call");
-  unsubs.push(onValue(callRef, async (snap) => {
-    const v = snap.val();
+  unsubs.push(onValue(callRef, ordered(decCall, async (snap, v) => {
     if (!v) {
       if (callPhase === "incoming") finishCall("Missed call.", false);
       else if (callPhase === "calling" && callWritten) finishCall("Call declined.", false);
@@ -1192,15 +1727,20 @@ function startCallListener() {
       return;
     }
     if (v.cid !== callCid) {
+      if (callPhase === "active" && v.re) calleeHandleRestart(v.re);
       if (callPhase === "idle" && v.state === "ringing" && v.offer) {
         callPhase = "incoming";
         incomingOffer = v.offer;
+        callVideo = !!v.video;
         showCall("incoming", v.name);
         startRing();
         if (document.hidden && window.Notification && Notification.permission === "granted") {
           try { new Notification((v.name || "Someone") + " is calling you"); } catch (e) {}
         }
       }
+    } else if (callPhase === "active" && isCaller) {
+      if (v.rq && v.rq !== lastRq) { lastRq = v.rq; callerRestart(); }
+      if (v.rea) callerHandleAnswer(v.rea);
     } else if (callPhase === "calling" && v.answer && pc && !remoteSet) {
       remoteSet = true;
       clearTimeout(noAnswerTimer);
@@ -1213,13 +1753,39 @@ function startCallListener() {
         finishCall("Could not connect.", true);
       }
     }
-  }, (err) => {
+  }), (err) => {
     console.error(err);
     showHelp("Calls are blocked", fbErr(err) + "\n\nIn Firebase Console > Realtime Database > Rules, allow read/write on rooms.");
   }));
 }
 
-$("callBtn").addEventListener("click", startCall);
+$("callBtn").addEventListener("click", () => { if (callPhase !== "idle") return; closeEmoji(); $("callChoice").hidden = false; });
+$("callVoiceBtn").addEventListener("click", () => { $("callChoice").hidden = true; startCall(false); });
+$("callVideoBtn").addEventListener("click", () => { $("callChoice").hidden = true; startCall(true); });
+$("callChoiceCancel").addEventListener("click", () => { $("callChoice").hidden = true; });
+$("callCam").addEventListener("click", () => {
+  const t = localStream && localStream.getVideoTracks()[0];
+  if (!t) return;
+  t.enabled = !t.enabled;
+  $("callCam").textContent = t.enabled ? "Camera off" : "Camera on";
+});
+$("callFlip").addEventListener("click", async () => {
+  if (!localStream || !pc) return;
+  const old = localStream.getVideoTracks()[0], next = camFacing === "user" ? "environment" : "user";
+  const grab = async (f) => (await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: f }, width: { ideal: 480 }, height: { ideal: 640 } } })).getVideoTracks()[0];
+  if (old) { localStream.removeTrack(old); old.stop(); }
+  let nt = null, used = next;
+  try { nt = await grab(next); } catch (e) { try { nt = await grab(camFacing); used = camFacing; } catch (e2) {} }
+  if (!nt) { note("Could not switch camera."); return; }
+  const snd = pc.getSenders().find((x) => x.track === null || (x.track && x.track.kind === "video"));
+  if (snd) { try { await snd.replaceTrack(nt); } catch (e) {} }
+  localStream.addTrack(nt);
+  camFacing = used;
+  const lv = $("localVideo");
+  lv.srcObject = localStream; lv.style.transform = camFacing === "user" ? "scaleX(-1)" : "none";
+  lv.play().catch(() => {});
+  $("callCam").textContent = "Camera off";
+});
 $("callAccept").addEventListener("click", acceptCall);
 $("callDecline").addEventListener("click", () => finishCall("", true));
 $("callEnd").addEventListener("click", () => finishCall("Call ended.", true));
@@ -1304,11 +1870,11 @@ function updateMap() {
 
 function startLocListener() {
   locData = {};
-  unsubs.push(onValue(ref(db, "rooms/" + room + "~loc"), (snap) => {
-    locData = snap.val() || {};
+  unsubs.push(onValue(ref(db, "rooms/" + room + "~loc"), ordered(decLoc, (snap, v) => {
+    locData = v || {};
     renderLocBar();
     updateMap();
-  }));
+  })));
   const id = setInterval(() => { renderLocBar(); updateMap(); }, 20000);
   unsubs.push(() => clearInterval(id));
   renderLocBar();
@@ -1320,7 +1886,9 @@ function startWatch() {
 function writeLoc() {
   if (!myLocRef || !lastPos) return;
   lastWrite = nowS();
-  set(myLocRef, { name: me, lat: lastPos.lat, lng: lastPos.lng, acc: lastPos.acc || 0, ts: serverTimestamp(), until: shareUntil })
+  const lr = myLocRef, lp = lastPos, until = shareUntil;
+  encStr(JSON.stringify({ name: me, lat: lp.lat, lng: lp.lng, acc: lp.acc || 0 }))
+    .then((d) => set(lr, { d, ts: serverTimestamp(), until }))
     .then(() => { lastSentAt = nowS(); renderLocBar(); })
     .catch((e) => { note("Location not sent: " + ((e && (e.code || e.message)) || "error")); });
 }
@@ -1447,7 +2015,7 @@ function markSeen(force) {
 }
 
 /* ---------- disappearing messages (default 30 minutes) ---------- */
-function effTtl(m) { return m.ttl > 0 ? m.ttl : (cfgLoaded ? ttlMs : 0); }
+function effTtl(m) { return DEFAULT_TTL; } // fixed: every message disappears 30 minutes after it is sent
 function fmtLeft(ms) {
   if (ms <= 0) return "0s";
   const m = Math.floor(ms / 60000);
@@ -1491,6 +2059,7 @@ async function cleanupOld() {
   }
 }
 async function setTtl(v) {
+  return; // locked to 30 minutes
   if (!roomRef || v === ttlMs) return;
   try { await set(ref(db, "rooms/" + room + "~cfg"), { ttl: v, by: me, ts: serverTimestamp() }); }
   catch (e) { note("Could not change that. Check your internet."); return; }
@@ -1502,7 +2071,7 @@ function startExtras() {
   unsubs.push(onValue(ref(db, ".info/serverTimeOffset"), (s) => { srvOff = s.val() || 0; }));
   unsubs.push(onValue(ref(db, "rooms/" + room + "~cfg"), (s) => {
     const v = s.val() || {};
-    ttlMs = (v.ttl === undefined || v.ttl === null) ? DEFAULT_TTL : (Number(v.ttl) > 0 ? Number(v.ttl) : 0);
+    ttlMs = DEFAULT_TTL;
     const first = !cfgLoaded;
     cfgLoaded = true;
     updateSub(); renderSettings(); sweep();
@@ -1527,9 +2096,669 @@ function startExtras() {
     updateSub();
   }));
   startGameListener();
+  startFxListener();
+  startMgListener();
   const id = setInterval(sweep, 10000);
   unsubs.push(() => clearInterval(id));
   setTimeout(() => { markSeen(true); }, 1500);
+}
+
+
+/* ============ together features: buzz, touch together, mood, compass, boss mode ============ */
+const fxRef = (x) => ref(db, "rooms/" + room + "~fx" + (x ? "/" + x : ""));
+let fxFirst = true, lastBuzz = 0, bossOn = false;
+
+function playBuzzSound() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = "square"; o.frequency.value = 140; g.gain.value = 0.12;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + 0.55);
+  } catch (e) {}
+}
+
+/* --- 1. Buzz: one fixed button in the header --- */
+let buzzLastSent = 0;
+async function sendBuzz() {
+  if (!roomRef) return;
+  const now = Date.now();
+  if (now - buzzLastSent < 2000) { note("Wait a moment before the next buzz."); return; }
+  buzzLastSent = now;
+  if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+  try {
+    await set(fxRef("buzz"), { by: cid, n: me, ts: now, k: Math.random() });
+    note("Buzz sent \u2713");
+  } catch (e) { showHelp("Buzz failed", fbErr(e)); }
+}
+function receiveBuzz(who) {
+  if (navigator.vibrate) navigator.vibrate([250, 100, 250, 100, 500]);
+  if (bossOn) return;
+  playBuzzSound();
+  const ch = $("chat");
+  ch.classList.remove("buzzing"); void ch.offsetWidth; ch.classList.add("buzzing");
+  $("buzzWho").textContent = (who || "Partner") + " buzzed you";
+  $("buzzFlash").classList.add("on");
+  setTimeout(() => $("buzzFlash").classList.remove("on"), 1400);
+  setTimeout(() => ch.classList.remove("buzzing"), 700);
+}
+$("buzzBtn").addEventListener("click", sendBuzz);
+
+/* --- 2. Touch together: both hold the circle at the same time --- */
+let holding = false, holdBeat = null, otherTouch = null, otherWasAlive = false, tpTimer = null, tpBuzz = null;
+const touchAlive = () => !!(otherTouch && typeof otherTouch.t === "number" && nowS() - otherTouch.t < 5000);
+function touchUi() {
+  const alive = touchAlive();
+  const both = holding && alive;
+  const pad = $("touchPad");
+  pad.classList.toggle("hold", holding && !both);
+  pad.classList.toggle("both", both);
+  $("touchIcon").textContent = both ? "\u{1F49E}" : (holding ? "\u2764\uFE0F" : "\u{1F90D}");
+  const nm = (otherTouch && otherTouch.n) || "your partner";
+  $("touchMsg").textContent = both ? "You and " + nm + " are touching together \u2764\uFE0F"
+    : holding ? "Waiting for " + nm + " to touch\u2026"
+    : alive ? nm + " is touching right now. Put your finger on the circle too!"
+    : "Hold your finger on the circle. When your partner holds too, both phones glow and vibrate together.";
+  if (both && !tpBuzz) {
+    if (navigator.vibrate) navigator.vibrate([90, 70, 90]);
+    tpBuzz = setInterval(() => { if (navigator.vibrate) navigator.vibrate([90, 70, 90]); }, 1100);
+  } else if (!both && tpBuzz) { clearInterval(tpBuzz); tpBuzz = null; if (navigator.vibrate) navigator.vibrate(0); }
+}
+function touchStart(e) {
+  if (e) e.preventDefault();
+  if (holding || !roomRef) return;
+  holding = true;
+  const r = fxRef("touch/" + cid);
+  onDisconnect(r).remove().catch(() => {});
+  const beat = () => set(r, { n: me, t: serverTimestamp() }).catch(() => {});
+  beat();
+  holdBeat = setInterval(beat, 1500);
+  touchUi();
+}
+function touchEnd() {
+  if (!holding) return;
+  holding = false;
+  clearInterval(holdBeat); holdBeat = null;
+  remove(fxRef("touch/" + cid)).catch(() => {});
+  touchUi();
+}
+function openTouch() { openPanel("touchPanel"); touchUi(); tpTimer = setInterval(touchUi, 1000); }
+function closeTouch() { touchEnd(); $("touchPanel").hidden = true; clearInterval(tpTimer); tpTimer = null; if (tpBuzz) { clearInterval(tpBuzz); tpBuzz = null; } }
+const tpad = $("touchPad");
+tpad.addEventListener("pointerdown", touchStart);
+tpad.addEventListener("pointerup", touchEnd);
+tpad.addEventListener("pointercancel", touchEnd);
+tpad.addEventListener("pointerleave", touchEnd);
+tpad.addEventListener("contextmenu", (e) => e.preventDefault());
+$("touchClose").addEventListener("click", closeTouch);
+$("mnTouch").addEventListener("click", openTouch);
+
+/* --- 3. Mood color --- */
+const MOODS = [
+  ["\u{1F60D}", "Love", "#e91e63"], ["\u{1F60A}", "Happy", "#ffb300"], ["\u{1F60C}", "Calm", "#43a047"],
+  ["\u{1F634}", "Sleepy", "#5c6bc0"], ["\u{1F621}", "Angry", "#e53935"], ["\u{1F622}", "Sad", "#546e7a"]
+];
+(function buildMoods() {
+  const g = $("moodGrid");
+  MOODS.forEach((m, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.style.background = m[2]; b.style.color = "#fff";
+    b.innerHTML = "<span>" + m[0] + "</span>" + m[1];
+    b.addEventListener("click", () => setMood(i));
+    g.appendChild(b);
+  });
+})();
+async function setMood(i) {
+  $("moodSheet").hidden = true;
+  if (!roomRef) return;
+  try {
+    if (i < 0) await remove(fxRef("mood/" + cid));
+    else await set(fxRef("mood/" + cid), { i, n: me, ts: Date.now() });
+  } catch (e) { showHelp("Mood failed", fbErr(e)); }
+}
+function paintMood(v) {
+  const list = Object.keys(v || {}).map((k) => Object.assign({ k }, v[k])).filter((x) => MOODS[x.i]);
+  const glow = $("moodGlow");
+  if (!list.length) { glow.style.opacity = "0"; $("moodTag").textContent = ""; return; }
+  list.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const c = MOODS[list[0].i][2];
+  glow.style.background = "linear-gradient(180deg," + c + "40 0%," + c + "14 55%," + c + "30 100%)";
+  glow.style.opacity = "1";
+  $("moodTag").textContent = list.map((x) => MOODS[x.i][0] + " " + (x.k === cid ? "You" : (x.n || "Partner"))).join("  ");
+}
+$("mnMood").addEventListener("click", () => { $("menuSheet").hidden = true; $("moodSheet").hidden = false; });
+$("moodClose").addEventListener("click", () => { $("moodSheet").hidden = true; });
+$("moodClear").addEventListener("click", () => setMood(-1));
+
+/* --- shared listener for buzz / touch / mood --- */
+function startFxListener() {
+  fxFirst = true; otherTouch = null; otherWasAlive = false;
+  unsubs.push(onValue(fxRef(), (snap) => {
+    const v = snap.val() || {};
+    // buzz
+    const b = v.buzz;
+    if (b && typeof b.ts === "number") {
+      if (fxFirst) lastBuzz = b.k || b.ts;
+      else if ((b.k || b.ts) !== lastBuzz) { lastBuzz = b.k || b.ts; if (b.by !== cid) receiveBuzz(b.n); }
+    }
+    // touch
+    otherTouch = null;
+    Object.keys(v.touch || {}).forEach((k) => { if (k !== cid) otherTouch = v.touch[k]; });
+    const alive = touchAlive();
+    if (alive && !otherWasAlive && !fxFirst && $("touchPanel").hidden && !bossOn) {
+      if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+      note((otherTouch.n || "Partner") + " wants to touch together \u{1F49E}  Menu > Touch together");
+    }
+    otherWasAlive = alive;
+    if (!$("touchPanel").hidden) touchUi();
+    // mood
+    paintMood(v.mood);
+    fxFirst = false;
+  }, () => {}));
+}
+
+/* --- 4. Distance + compass --- */
+let cpWatch = null, cpMe = null, cpHeading = null, cpTimer = null;
+function bearingTo(a, b) {
+  const r = Math.PI / 180, dl = (b.lng - a.lng) * r;
+  const y = Math.sin(dl) * Math.cos(b.lat * r);
+  const x = Math.cos(a.lat * r) * Math.sin(b.lat * r) - Math.sin(a.lat * r) * Math.cos(b.lat * r) * Math.cos(dl);
+  return (Math.atan2(y, x) / r + 360) % 360;
+}
+function onOri(e) {
+  let h = null;
+  if (typeof e.webkitCompassHeading === "number") h = e.webkitCompassHeading;
+  else if (e.absolute && typeof e.alpha === "number") h = (360 - e.alpha) % 360;
+  if (h === null) return;
+  if (cpHeading === null) cpHeading = h;
+  else { let d = ((h - cpHeading + 540) % 360) - 180; cpHeading = (cpHeading + d * 0.25 + 360) % 360; }
+}
+function cpTarget() {
+  const k = Object.keys(locData).find((x) => x !== cid && validPos(locData[x]) && locData[x].until > nowS());
+  return k ? locData[k] : null;
+}
+function cpDraw() {
+  if ($("compass").hidden) return;
+  const t = cpTarget();
+  const arrow = $("cpArrow");
+  if (!t) {
+    $("cpDist").textContent = "--"; arrow.style.opacity = ".25";
+    $("cpMsg").textContent = "Your partner is not sharing live location.\nAsk them to tap the \u{1F4CD} button and choose Share live.";
+    return;
+  }
+  const nm = t.name || "Partner";
+  if (!cpMe) { $("cpDist").textContent = "..."; arrow.style.opacity = ".25"; $("cpMsg").textContent = "Getting your own location\u2026 (allow location if asked)"; return; }
+  const d = distM(cpMe, t);
+  $("cpDist").textContent = d < 1000 ? Math.round(d) + " m" : (d / 1000).toFixed(d < 10000 ? 2 : 1) + " km";
+  arrow.style.opacity = "1";
+  const brg = bearingTo(cpMe, t);
+  const rot = brg - (cpHeading === null ? 0 : cpHeading);
+  arrow.style.transform = "rotate(" + (rot - 90) + "deg)";
+  $("cpMsg").textContent = nm + " is " + (d < 15 ? "right next to you" : "this way") + " \u00b7 updated " + ago(t.ts) +
+    (cpHeading === null ? "\nCompass sensor not available. Top of the circle = North." : "");
+}
+async function openCompass() {
+  $("menuSheet").hidden = true;
+  openPanel("compass");
+  cpMe = null; cpHeading = null;
+  try { if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function") await DeviceOrientationEvent.requestPermission(); } catch (e) {}
+  window.addEventListener("deviceorientationabsolute", onOri, true);
+  window.addEventListener("deviceorientation", onOri, true);
+  if (navigator.geolocation) {
+    cpWatch = navigator.geolocation.watchPosition(
+      (p) => { cpMe = { lat: p.coords.latitude, lng: p.coords.longitude }; cpDraw(); },
+      () => { $("cpMsg").textContent = "Allow location for this website, then reopen this screen."; },
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 });
+  }
+  cpTimer = setInterval(cpDraw, 500);
+  cpDraw();
+}
+function closeCompass() {
+  $("compass").hidden = true;
+  clearInterval(cpTimer); cpTimer = null;
+  if (cpWatch !== null) { navigator.geolocation.clearWatch(cpWatch); cpWatch = null; }
+  window.removeEventListener("deviceorientationabsolute", onOri, true);
+  window.removeEventListener("deviceorientation", onOri, true);
+}
+$("mnCompass").addEventListener("click", openCompass);
+$("cpClose").addEventListener("click", closeCompass);
+
+/* --- 5. Boss mode: the chat turns into a working calculator --- */
+let bExpr = "", bRes = "0", bTaps = [];
+function bossRender() { $("bossExpr").textContent = bExpr; $("bossRes").textContent = bRes; }
+function bossCalc() {
+  const e = bExpr.replace(/\u00d7/g, "*").replace(/\u00f7/g, "/").replace(/\u2212/g, "-");
+  if (!e || !/^[0-9+\-*/.() ]+$/.test(e)) return;
+  try {
+    const r = Function('"use strict"; return (' + e + ")")();
+    if (typeof r === "number" && isFinite(r)) { bRes = String(Math.round(r * 1e9) / 1e9); bExpr = bRes; }
+    else bRes = "Error";
+  } catch (x) { bRes = "Error"; }
+}
+function bossKey(k) {
+  if (k === "AC") { bExpr = ""; bRes = "0"; }
+  else if (k === "\u232b") { bExpr = bExpr.slice(0, -1); bRes = bExpr || "0"; }
+  else if (k === "=") bossCalc();
+  else if (k === "%") { if (bExpr) { try { bExpr = String(Function('"use strict"; return (' + bExpr.replace(/\u00d7/g, "*").replace(/\u00f7/g, "/").replace(/\u2212/g, "-") + ")/100")()); bRes = bExpr; } catch (x) {} } }
+  else { if (bRes === "Error") { bExpr = ""; } bExpr += k; bRes = bExpr; }
+  bossRender();
+}
+(function buildBoss() {
+  const keys = ["AC","\u232b","%","\u00f7","7","8","9","\u00d7","4","5","6","\u2212","1","2","3","+","0",".","="];
+  const g = $("bossKeys");
+  keys.forEach((k) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = k;
+    if (["\u00f7","\u00d7","\u2212","+","="].includes(k)) b.className = "op";
+    else if (["AC","\u232b","%"].includes(k)) b.className = "fn";
+    if (k === "0") b.className = "zero";
+    b.addEventListener("click", () => bossKey(k));
+    g.appendChild(b);
+  });
+})();
+function bossOpen() {
+  $("menuSheet").hidden = true;
+  closeEmoji();
+  bossOn = true; bExpr = ""; bRes = "0"; bossRender();
+  $("boss").hidden = false;
+  document.title = "Calculator";
+}
+function bossClose() { bossOn = false; $("boss").hidden = true; document.title = "Our Chat"; }
+// triple-tap the calculator display to get back to the chat
+$("bossDisp").addEventListener("click", () => {
+  const n = Date.now();
+  bTaps = bTaps.filter((t) => n - t < 900); bTaps.push(n);
+  if (bTaps.length >= 3) { bTaps = []; bossClose(); }
+});
+$("mnBoss").addEventListener("click", bossOpen);
+// quick way in: triple-tap the "Our Chat" title
+let tTaps = [];
+$("titleTxt").addEventListener("click", () => {
+  const n = Date.now();
+  tTaps = tTaps.filter((t) => n - t < 900); tTaps.push(n);
+  if (tTaps.length >= 3) { tTaps = []; bossOpen(); }
+});
+
+
+/* ============ mini games: Rock-Paper-Scissors, Number guess, Tap race ============ */
+const mgRef = (x) => ref(db, "rooms/" + room + "~mg" + (x ? "/" + x : ""));
+let mg = {}, mgTab = null, mgScore = { w: 0, l: 0, d: 0 }, mgCounted = -1, mgFirst = true, mgSig = "", mgTimer = null;
+let trMine = 0, trRound = -1;
+const RPSI = ["\u270A", "\u270B", "\u270C\uFE0F"], RPSN = ["Rock", "Paper", "Scissors"], TR_GOAL = 30;
+const mgEsc = (t) => String(t == null ? "" : t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const otherKey = (o) => Object.keys(o || {}).find((k) => k !== cid);
+
+function rpsResult(g) {
+  const p = (g && g.p) || {}, mine = p[cid], ok = otherKey(p), opp = ok ? p[ok] : null;
+  if (!mine || !opp) return null;
+  return mine.v === opp.v ? 0 : ((mine.v - opp.v + 3) % 3 === 1 ? 1 : -1);
+}
+function rpsHtml() {
+  const g = mg.rps || {}, p = g.p || {}, mine = p[cid], ok = otherKey(p), opp = ok ? p[ok] : null;
+  let h = '<div class="mgs">You ' + mgScore.w + " \u00b7 draw " + mgScore.d + " \u00b7 them " + mgScore.l + "</div>";
+  const res = rpsResult(g);
+  if (res !== null) {
+    h += '<div class="mgbig">' + RPSI[mine.v] + " vs " + RPSI[opp.v] + "</div>";
+    h += '<div class="mgs"><b>' + (res === 0 ? "Draw!" : res === 1 ? "You win \u{1F389}" : mgEsc(opp.n || "They") + " wins") + "</b></div>";
+    h += '<button data-a="rps-next">Next round</button>';
+  } else if (mine) {
+    h += '<div class="mgbig">' + RPSI[mine.v] + '</div><div class="mgs">Waiting for your partner to choose\u2026</div>';
+  } else {
+    h += '<div class="mgs">' + (opp ? mgEsc(opp.n || "Your partner") + " has chosen. Your turn!" : "Choose. Both picks are revealed together.") + "</div>";
+    h += '<div class="mgpick">' + RPSI.map((e, i) => '<button data-a="rps-pick" data-v="' + i + '" aria-label="' + RPSN[i] + '">' + e + "</button>").join("") + "</div>";
+  }
+  return h;
+}
+
+function ngEntries(g) {
+  return Object.keys((g && g.g) || {}).map((k) => g.g[k]);
+}
+function ngHtml() {
+  const g = mg.ng;
+  if (!g || !g.s) return '<div class="mgs">A secret number from 1 to 100. You both guess, the first to find it wins.</div><button data-a="ng-new">Start</button>';
+  const list = ngEntries(g), win = list.find((e) => e.v === g.s);
+  let h = '<div class="mgs">Guess the number (1\u2013100). ' + list.length + " guesses so far.</div>";
+  if (win) h += '<div class="mgbig">\u{1F389}</div><div class="mgs"><b>' + (win.c === cid ? "You" : mgEsc(win.n || "They")) + " found it: " + g.s + "</b></div><button data-a=\"ng-new\">New round</button>";
+  else h += '<input id="ngIn" type="number" inputmode="numeric" min="1" max="100" placeholder="1-100"><button data-a="ng-guess">Guess</button>';
+  h += '<div class="mglist">' + list.slice(-8).reverse().map((e) =>
+    "<div><b>" + (e.c === cid ? "You" : mgEsc(e.n || "They")) + "</b>: " + e.v + " \u2192 " + (e.v === g.s ? "\u2705" : e.v < g.s ? "higher \u2B06" : "lower \u2B07") + "</div>").join("") + "</div>";
+  return h;
+}
+
+function trHtml() {
+  const g = mg.tr;
+  if (!g || !g.go) return '<div class="mgs">Who taps ' + TR_GOAL + " times first? Both start after a 3 second countdown.</div><button data-a=\"tr-start\">Start race</button>";
+  const now = nowS(), c = g.c || {}, ok = otherKey(c), oc = ok ? c[ok] : 0;
+  let h = "";
+  if (now < g.go) h += '<div class="mgbig">' + Math.ceil((g.go - now) / 1000) + '</div><div class="mgs">Get ready\u2026</div>';
+  else if (g.w) h += '<div class="mgbig">\u{1F3C6}</div><div class="mgs"><b>' + (g.w.c === cid ? "You win!" : mgEsc(g.w.n || "They") + " wins") + '</b></div><button data-a="tr-start">Race again</button>';
+  else h += '<button class="trtap" data-a="tr-tap">TAP!</button>';
+  h += '<div class="mgbar">You: ' + trMine + '/' + TR_GOAL + '<i style="width:' + Math.min(100, trMine / TR_GOAL * 100) + '%"></i></div>';
+  h += '<div class="mgbar o">Partner: ' + oc + '/' + TR_GOAL + '<i style="width:' + Math.min(100, oc / TR_GOAL * 100) + '%"></i></div>';
+  return h;
+}
+
+function mgRender() {
+  if ($("mgPanel").hidden) return;
+  const ae = document.activeElement;
+  const keepId = ae && ae.tagName === "INPUT" && $("mgBody").contains(ae) ? ae.id : "", keepVal = keepId ? ae.value : "";
+  $("mgBody").innerHTML = mgTab && MGAMES[mgTab] ? '<button data-a="back" class="mgback">\u2190 All games</button>' + MGAMES[mgTab].h() : gridHtml();
+  if (keepId && $(keepId)) { $(keepId).value = keepVal; $(keepId).focus(); }
+}
+
+async function mgAct(a, el) {
+  try {
+    if (MGACT[a]) return await MGACT[a](el);
+    if (a === "rps-pick") await set(mgRef("rps/p/" + cid), { v: +el.dataset.v, n: me });
+    else if (a === "rps-next") { const r = ((mg.rps && mg.rps.r) || 0) + 1; await set(mgRef("rps"), { r }); }
+    else if (a === "ng-new") await set(mgRef("ng"), { s: 1 + Math.floor(Math.random() * 100), r: ((mg.ng && mg.ng.r) || 0) + 1 });
+    else if (a === "ng-guess") {
+      const v = parseInt(($("ngIn") || {}).value, 10);
+      if (!(v >= 1 && v <= 100)) { note("Enter a number from 1 to 100."); return; }
+      $("ngIn").value = "";
+      await push(mgRef("ng/g"), { c: cid, n: me, v });
+    }
+    else if (a === "tr-start") await set(mgRef("tr"), { r: ((mg.tr && mg.tr.r) || 0) + 1, go: nowS() + 3500 });
+  } catch (e) { showHelp("Game error", fbErr(e)); }
+}
+function trTap() {
+  const g = mg.tr;
+  if (!g || !g.go || nowS() < g.go || g.w) return;
+  trMine++;
+  if (navigator.vibrate) navigator.vibrate(8);
+  set(mgRef("tr/c/" + cid), trMine).catch(() => {});
+  if (trMine >= TR_GOAL) runTransaction(mgRef("tr/w"), (cur) => cur ? undefined : { c: cid, n: me }).catch(() => {});
+  mgRender();
+}
+$("mgBody").addEventListener("click", (e) => {
+  const el = e.target.closest("[data-a]");
+  if (el && el.dataset.a !== "tr-tap" && el.dataset.a !== "rx-tap") mgAct(el.dataset.a, el);
+});
+$("mgBody").addEventListener("pointerdown", (e) => {
+  const el = e.target.closest("[data-a]");
+  if (el && el.dataset.a === "tr-tap") { e.preventDefault(); trTap(); }
+  else if (el && el.dataset.a === "rx-tap") { e.preventDefault(); rxTap(); }
+});
+$("mgTabs").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (b) { mgTab = b.dataset.t; mgRender(); }
+});
+function openMG() {
+  openPanel("mgPanel"); mgRender();
+  clearInterval(mgTimer);
+  mgTimer = setInterval(() => { if (mgTab && MGAMES[mgTab] && MGAMES[mgTab].live) mgRender(); }, 250);
+}
+function closeMG() { $("mgPanel").hidden = true; clearInterval(mgTimer); mgTimer = null; }
+$("mnMG").addEventListener("click", openMG);
+$("mgClose").addEventListener("click", closeMG);
+
+function startMgListener() {
+  mg = {}; mgFirst = true; mgSig = ""; mgCounted = -1; trMine = 0; trRound = -1;
+  unsubs.push(onValue(mgRef(), (snap) => {
+    mg = snap.val() || {};
+    const sig = Object.keys(MGAMES).map((k) => (mg[k] || {}).r).join("|");
+    if (!mgFirst && sig !== mgSig && $("mgPanel").hidden && !bossOn) note("\u{1F3B2} Your partner started a game. Menu > Mini games");
+    mgSig = sig; mgFirst = false;
+    // keep score once per finished rock-paper-scissors round
+    const res = rpsResult(mg.rps), rr = (mg.rps && mg.rps.r) || 0;
+    if (res !== null && mgCounted !== rr) { mgCounted = rr; if (res === 1) mgScore.w++; else if (res === -1) mgScore.l++; else mgScore.d++; }
+    const tr = (mg.tr && mg.tr.r) || 0;
+    if (tr !== trRound) { trRound = tr; trMine = 0; }
+    mgRender();
+  }, () => {}));
+}
+
+
+/* ============ 10 more games ============ */
+const R = (k) => (mg[k] && mg[k].r) || 0;
+const pidx = (g) => (g.f === cid ? 0 : 1);
+const rnd = (n) => Math.floor(Math.random() * n);
+const MGACT = {};
+function mgTx(key, fn) {
+  return runTransaction(mgRef(key), (cur) => {
+    if (!cur) return undefined;
+    const c = JSON.parse(JSON.stringify(cur));
+    const r = fn(c);
+    return r === false ? undefined : (r || c);
+  }).catch((e) => { console.error(e); });
+}
+const startBtn = (a, label) => '<button data-a="' + a + '">' + label + "</button>";
+const scoreLine = (sc) => { sc = sc || {}; const o = otherKey(sc); return '<div class="mgs">You ' + (sc[cid] || 0) + " \u00b7 Partner " + (o ? sc[o] : 0) + "</div>"; };
+const otherSc = (sc) => { const o = otherKey(sc || {}); return o ? sc[o] : 0; };
+
+/* 1) Connect Four */
+function c4Win(b, ch) {
+  const at = (r, c) => (r >= 0 && r < 6 && c >= 0 && c < 7 ? b[r * 7 + c] : "");
+  for (let r = 0; r < 6; r++) for (let c = 0; c < 7; c++) for (const d of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
+    let k = 0; while (k < 4 && at(r + d[0] * k, c + d[1] * k) === ch) k++;
+    if (k === 4) return true;
+  }
+  return false;
+}
+function c4Html() {
+  const g = mg.c4;
+  if (!g || !g.b) return '<div class="mgs">Drop discs. First to connect 4 wins. Whoever taps Start plays red.</div>' + startBtn("c4-new", "Start game");
+  const pi = pidx(g);
+  let h = '<div class="mgs"><b>' + (g.w >= 0 ? (g.w === 2 ? "Draw!" : g.w === pi ? "You win \u{1F389}" : "Partner wins") : (g.t === pi ? "Your turn" : "Partner's turn")) + "</b> \u00b7 you are " + (pi ? "yellow" : "red") + "</div><div class=\"c4\">";
+  for (let r = 0; r < 6; r++) for (let c = 0; c < 7; c++) { const ch = g.b[r * 7 + c]; h += '<div class="c4c ' + (ch === "1" ? "red" : ch === "2" ? "yel" : "") + '" data-a="c4" data-v="' + c + '"></div>'; }
+  return h + "</div>" + (g.w >= 0 ? startBtn("c4-new", "New game") : "");
+}
+MGACT["c4-new"] = () => set(mgRef("c4"), { r: R("c4") + 1, f: cid, t: 0, b: "0".repeat(42), w: -1 });
+MGACT.c4 = (el) => { const col = +el.dataset.v; return mgTx("c4", (c) => {
+  const pi = pidx(c); if (c.w >= 0 || c.t !== pi) return false;
+  let row = -1; for (let r = 5; r >= 0; r--) if (c.b[r * 7 + col] === "0") { row = r; break; }
+  if (row < 0) return false;
+  const ch = String(pi + 1), a = c.b.split(""); a[row * 7 + col] = ch; c.b = a.join("");
+  if (c4Win(c.b, ch)) c.w = pi; else if (!c.b.includes("0")) c.w = 2; else c.t = 1 - pi;
+}); };
+
+/* 2) Memory match */
+const MMEMO = ["\u{1F436}", "\u{1F431}", "\u{1F98A}", "\u{1F43C}", "\u{1F438}", "\u{1F984}"];
+function mmHtml() {
+  const g = mg.mm;
+  if (!g || !g.d) return '<div class="mgs">Find the matching pairs. Match = play again.</div>' + startBtn("mm-new", "Start game");
+  const pi = pidx(g), d = g.d.split(","), up = g.up ? g.up.split(",") : [], over = !g.m.includes("0");
+  const mine = g["s" + pi] || 0, theirs = g["s" + (1 - pi)] || 0;
+  let h = '<div class="mgs"><b>' + (over ? (mine === theirs ? "Draw!" : mine > theirs ? "You win \u{1F389}" : "Partner wins") : (g.t === pi ? "Your turn" : "Partner's turn")) + "</b> \u00b7 You " + mine + " \u00b7 Partner " + theirs + '</div><div class="mmgrid">';
+  d.forEach((v, i) => { const done = g.m[i] !== "0", open = up.includes(String(i)); h += '<div class="mmc ' + (done ? "done" : open ? "open" : "") + '" data-a="mm" data-v="' + i + '">' + (done || open ? MMEMO[+v] : "\u2753") + "</div>"; });
+  return h + "</div>" + (over ? startBtn("mm-new", "New game") : "");
+}
+MGACT["mm-new"] = () => {
+  const a = []; for (let i = 0; i < 6; i++) a.push(i, i);
+  for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  return set(mgRef("mm"), { r: R("mm") + 1, f: cid, t: 0, d: a.join(","), m: "0".repeat(12), up: "", s0: 0, s1: 0 });
+};
+MGACT.mm = async (el) => {
+  const i = +el.dataset.v; let mis = false;
+  await mgTx("mm", (c) => {
+    const pi = pidx(c); if (c.t !== pi) return false;
+    const up = c.up ? c.up.split(",").map(Number) : [];
+    if (up.length >= 2 || up.includes(i) || c.m[i] !== "0") return false;
+    up.push(i);
+    if (up.length === 2) {
+      const d = c.d.split(",");
+      if (d[up[0]] === d[up[1]]) { const m = c.m.split(""); m[up[0]] = m[up[1]] = String(pi + 1); c.m = m.join(""); c["s" + pi] = (c["s" + pi] || 0) + 1; c.up = ""; }
+      else { c.up = up.join(","); mis = true; }
+    } else c.up = up.join(",");
+  });
+  if (mis) setTimeout(() => mgTx("mm", (c) => { if (!c.up || c.up.split(",").length < 2) return false; c.up = ""; c.t = 1 - c.t; }), 1300);
+};
+
+/* 3) Hangman */
+const HM_ART = ["\u{1F600}", "\u{1F642}", "\u{1F610}", "\u{1F61F}", "\u{1F628}", "\u{1F631}", "\u{1F480}"];
+function hmHtml() {
+  const g = mg.hm;
+  if (!g || !g.w) return '<div class="mgs">Type a secret word (3 to 10 letters). Your partner guesses it letter by letter.</div><input id="hmIn" maxlength="10" placeholder="word" autocapitalize="characters" style="width:180px">' + startBtn("hm-set", "Set word");
+  const gs = g.g || "", wrong = [...new Set(gs.split(""))].filter((l) => !g.w.includes(l)).length;
+  const won = g.w.split("").every((l) => gs.includes(l)), lost = wrong >= 6, setter = g.by === cid;
+  let h = '<div class="mgbig">' + HM_ART[Math.min(wrong, 6)] + '</div><div class="hmw">' + g.w.split("").map((l) => (gs.includes(l) || lost || setter ? l : "_")).join(" ") + "</div>";
+  h += '<div class="mgs">Wrong: ' + wrong + "/6</div>";
+  if (won) h += '<div class="mgs"><b>' + (setter ? "Your partner found it \u{1F389}" : "You found it \u{1F389}") + "</b></div>" + startBtn("hm-new", "New word");
+  else if (lost) h += '<div class="mgs"><b>' + (setter ? "Partner could not guess it" : "Out of tries. The word was " + g.w) + "</b></div>" + startBtn("hm-new", "New word");
+  else if (setter) h += '<div class="mgs">Your partner is guessing\u2026</div>';
+  else h += '<div class="kb">' + "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((l) => '<div class="' + (gs.includes(l) ? "used" : "") + '" data-a="hm-g" data-v="' + l + '">' + l + "</div>").join("") + "</div>";
+  return h;
+}
+MGACT["hm-set"] = () => {
+  const w = (($("hmIn") || {}).value || "").toUpperCase().replace(/[^A-Z]/g, "");
+  if (w.length < 3) { note("Use 3 to 10 letters (A-Z)."); return; }
+  return set(mgRef("hm"), { r: R("hm") + 1, by: cid, w, g: "" });
+};
+MGACT["hm-new"] = () => set(mgRef("hm"), { r: R("hm") + 1 });
+MGACT["hm-g"] = (el) => mgTx("hm", (c) => { if (c.by === cid || (c.g || "").includes(el.dataset.v)) return false; c.g = (c.g || "") + el.dataset.v; });
+
+/* 4) Would you rather */
+const WYR = [["Beach holiday", "Mountain trip"], ["Fly like a bird", "Be invisible"], ["Always 10 minutes late", "Always 20 minutes early"], ["Eat your favourite food daily", "Try a new food daily"], ["Live in a big city", "Live in a quiet village"], ["Know the future", "Change the past"], ["Rainy day at home", "Sunny day outside"], ["Text all day", "Talk for hours on the phone"], ["Have a time machine", "Have a teleport door"], ["Be famous", "Be very rich"], ["Surprise trip", "Fully planned trip"], ["Never watch movies again", "Never use social media again"]];
+function wyrHtml() {
+  const g = mg.wyr;
+  if (!g || g.q == null) return '<div class="mgs">Pick one of two. See if you think alike.</div>' + startBtn("wyr-new", "Start");
+  const q = WYR[g.q], p = g.p || {}, mine = p[cid], ok = otherKey(p);
+  let h = '<div class="mgs"><b>Would you rather\u2026</b></div>';
+  if (mine != null && ok) {
+    h += '<div class="mgs">You: <b>' + q[mine] + "</b><br>Partner: <b>" + q[p[ok]] + "</b></div><div class=\"mgbig\">" + (mine === p[ok] ? "\u{1F49E}" : "\u{1F604}") + '</div><div class="mgs">' + (mine === p[ok] ? "Same choice! You think alike." : "Different choices!") + "</div>" + startBtn("wyr-new", "Next question");
+  } else if (mine != null) h += '<div class="mgs">You chose <b>' + q[mine] + "</b>. Waiting for your partner\u2026</div>";
+  else h += '<div class="opt" data-a="wyr" data-v="0">' + q[0] + '</div><div class="mgs">or</div><div class="opt" data-a="wyr" data-v="1">' + q[1] + "</div>";
+  return h;
+}
+MGACT["wyr-new"] = () => set(mgRef("wyr"), { r: R("wyr") + 1, q: rnd(WYR.length) });
+MGACT.wyr = (el) => mgTx("wyr", (c) => { c.p = c.p || {}; if (c.p[cid] != null) return false; c.p[cid] = +el.dataset.v; });
+
+/* 5) Truth or dare */
+const TRUTH = ["What is your sweetest memory of us?", "What is one thing you never told me?", "What is your biggest fear?", "What made you smile today?", "What is a secret talent you have?", "What did you first notice about me?", "What is your most embarrassing moment?", "What is one dream you want to come true?", "Which habit of mine do you like most?", "Which song reminds you of me?"];
+const DARE = ["Send me a voice message singing one line of a song.", "Describe me using only 3 emojis.", "Do 10 jumping jacks right now.", "Write a two-line poem about me.", "Make the funniest face and describe it.", "Talk in a funny style for your next 3 messages.", "Tell me three things you like about me.", "Draw something on the drawing board for me to guess.", "Send me your best joke.", "Say I miss you in 3 languages."];
+function todHtml() {
+  const g = mg.tod;
+  let h = '<div class="mgs">Pick one. The card shows on both phones.</div>';
+  if (g && g.k) h = '<div class="mgbig">' + (g.k === "truth" ? "\u{1F607}" : "\u{1F608}") + '</div><div class="mgs"><b>' + (g.k === "truth" ? "TRUTH" : "DARE") + (g.by === cid ? " (you ask your partner)" : " (from your partner, for you)") + ':</b><br>' + (g.k === "truth" ? TRUTH : DARE)[g.i] + "</div>";
+  return h + '<div class="mgpick"><button data-a="tod" data-v="truth">Truth</button><button data-a="tod" data-v="dare">Dare</button></div>';
+}
+MGACT.tod = (el) => set(mgRef("tod"), { r: R("tod") + 1, k: el.dataset.v, i: rnd(10), by: cid });
+
+/* 6) Odd or even */
+function oeHtml() {
+  const g = mg.oe;
+  if (!g || !g.f) return '<div class="mgs">Both secretly pick 1 to 5. If the total is odd, the Odd player wins, if even, the Even player wins. Whoever taps Start is Odd.</div>' + startBtn("oe-new", "Start");
+  const pi = pidx(g), p = g.p || {}, mine = p[cid], ok = otherKey(p), done = g.w != null;
+  let h = '<div class="mgs">You are <b>' + (pi === 0 ? "ODD" : "EVEN") + "</b> \u00b7 You " + (g["s" + pi] || 0) + " \u00b7 Partner " + (g["s" + (1 - pi)] || 0) + "</div>";
+  if (done) h += '<div class="mgbig">' + mine + " + " + p[ok] + " = " + (mine + p[ok]) + '</div><div class="mgs"><b>' + (g.w === pi ? "You win \u{1F389}" : "Partner wins") + "</b></div>" + startBtn("oe-next", "Next round");
+  else if (mine != null) h += '<div class="mgbig">' + mine + '</div><div class="mgs">Waiting for your partner\u2026</div>';
+  else h += '<div class="mgs">Choose your number</div><div class="mgpick">' + [1, 2, 3, 4, 5].map((n) => '<button data-a="oe" data-v="' + n + '">' + n + "</button>").join("") + "</div>";
+  return h;
+}
+MGACT["oe-new"] = () => set(mgRef("oe"), { r: R("oe") + 1, f: cid, s0: 0, s1: 0 });
+MGACT["oe-next"] = () => { const g = mg.oe; return set(mgRef("oe"), { r: R("oe") + 1, f: g.f, s0: g.s0 || 0, s1: g.s1 || 0 }); };
+MGACT.oe = (el) => mgTx("oe", (c) => {
+  c.p = c.p || {}; if (c.p[cid] != null) return false;
+  c.p[cid] = +el.dataset.v;
+  const ks = Object.keys(c.p);
+  if (ks.length === 2) { const sum = c.p[ks[0]] + c.p[ks[1]]; c.w = sum % 2 === 1 ? 0 : 1; c["s" + c.w] = (c["s" + c.w] || 0) + 1; }
+});
+
+/* 7) Reaction duel */
+function rxResult(g) {
+  if (g.e) return { w: g.e === cid ? "them" : "me", why: g.e === cid ? "You tapped too early!" : "Partner tapped too early!" };
+  const t = g.t || {}, ks = Object.keys(t), mine = t[cid], ok = otherKey(t);
+  if (ks.length === 2) { return mine <= t[ok] ? { w: "me", why: "You: " + mine + " ms \u00b7 Partner: " + t[ok] + " ms" } : { w: "them", why: "You: " + mine + " ms \u00b7 Partner: " + t[ok] + " ms" }; }
+  if (ks.length === 1 && nowS() > g.go + 2500) return t[cid] != null ? { w: "me", why: "You: " + mine + " ms. Partner was too slow." } : { w: "them", why: "Partner: " + t[ok] + " ms" };
+  return null;
+}
+function rxHtml() {
+  const g = mg.rx;
+  if (!g || !g.go) return '<div class="mgs">Wait for green, then tap as fast as you can. Tap early and you lose.</div>' + startBtn("rx-new", "Start");
+  const res = rxResult(g), now = nowS();
+  if (res) return '<div class="mgbig">' + (res.w === "me" ? "\u26A1" : "\u{1F422}") + '</div><div class="mgs"><b>' + (res.w === "me" ? "You win \u{1F389}" : "Partner wins") + "</b><br>" + res.why + "</div>" + startBtn("rx-new", "Play again");
+  if ((g.t || {})[cid] != null) return '<div class="mgs">You tapped in ' + g.t[cid] + " ms. Waiting for your partner\u2026</div>";
+  return now < g.go ? '<div class="rxbox" data-a="rx-tap" style="background:#e53935">Wait\u2026 don\'t tap</div>' : '<div class="rxbox" data-a="rx-tap" style="background:#2e9e4f">TAP NOW!</div>';
+}
+MGACT["rx-new"] = () => set(mgRef("rx"), { r: R("rx") + 1, go: nowS() + 2000 + rnd(3500) });
+function rxTap() {
+  const g = mg.rx; if (!g || !g.go || rxResult(g) || (g.t || {})[cid] != null) return;
+  const now = nowS();
+  if (navigator.vibrate) navigator.vibrate(10);
+  if (now < g.go) mgTx("rx", (c) => { if (c.e) return false; c.e = cid; });
+  else { const ms = Math.round(now - g.go); mgTx("rx", (c) => { c.t = c.t || {}; if (c.t[cid] != null) return false; c.t[cid] = ms; }); }
+}
+
+/* 8) Quick quiz */
+const QZ = [["What is the capital of Bangladesh?", ["Chattogram", "Dhaka", "Sylhet", "Khulna"], 1], ["How many days are in a leap year?", ["364", "365", "366", "367"], 2], ["Which planet is the Red Planet?", ["Venus", "Mars", "Jupiter", "Saturn"], 1], ["How many continents are there?", ["5", "6", "7", "8"], 2], ["Which is the largest ocean?", ["Atlantic", "Indian", "Arctic", "Pacific"], 3], ["What is 12 x 12?", ["124", "144", "132", "154"], 1], ["How many colours are in a rainbow?", ["5", "6", "7", "8"], 2], ["Which gas do plants take in?", ["Oxygen", "Carbon dioxide", "Nitrogen", "Hydrogen"], 1], ["National flower of Bangladesh?", ["Rose", "Lotus", "Shapla (water lily)", "Jasmine"], 2], ["How many minutes are in 2 hours?", ["100", "120", "140", "180"], 1], ["Fastest land animal?", ["Horse", "Lion", "Cheetah", "Deer"], 2]];
+function qzHtml() {
+  const g = mg.qz;
+  if (!g || g.q == null) return '<div class="mgs">Same question for both. The first correct answer scores a point. A wrong answer locks you out for that question.</div>' + startBtn("qz-new", "Start");
+  const q = QZ[g.q], bad = g.bad || {};
+  let h = scoreLine(g.sc) + '<div class="mgs"><b>' + q[0] + "</b></div>";
+  q[1].forEach((o, i) => { h += '<div class="opt ' + (g.w || bad[cid] ? "off" : "") + (g.w && i === q[2] ? "" : "") + '" data-a="qz" data-v="' + i + '">' + o + (g.w && i === q[2] ? " \u2705" : "") + "</div>"; });
+  if (g.w) h += '<div class="mgs"><b>' + (g.w === cid ? "You got it \u{1F389}" : "Partner got it first") + "</b></div>" + startBtn("qz-new", "Next question");
+  else if (bad[cid]) h += '<div class="mgs">Wrong. Waiting for your partner\u2026</div>';
+  return h;
+}
+MGACT["qz-new"] = () => { const g = mg.qz || {}; let q = rnd(QZ.length); if (q === g.q) q = (q + 1) % QZ.length; return set(mgRef("qz"), { r: R("qz") + 1, q, sc: g.sc || null }); };
+MGACT.qz = (el) => mgTx("qz", (c) => {
+  if (c.w) return false; c.bad = c.bad || {}; if (c.bad[cid]) return false;
+  if (+el.dataset.v === QZ[c.q][2]) { c.w = cid; c.sc = c.sc || {}; c.sc[cid] = (c.sc[cid] || 0) + 1; } else c.bad[cid] = 1;
+});
+
+/* 9) Dice duel */
+const DICE = ["\u2680", "\u2681", "\u2682", "\u2683", "\u2684", "\u2685"];
+function ddHtml() {
+  const g = mg.dd;
+  if (!g || !g.r) return '<div class="mgs">Both roll one dice. Higher number wins the round.</div>' + startBtn("dd-new", "Start");
+  const d = g.d || {}, mine = d[cid], ok = otherKey(d);
+  let h = scoreLine(g.sc);
+  if (g.w) h += '<div class="mgbig">' + DICE[mine - 1] + " vs " + DICE[d[ok] - 1] + '</div><div class="mgs"><b>' + (g.w === "draw" ? "Draw!" : g.w === cid ? "You win \u{1F389}" : "Partner wins") + "</b></div>" + startBtn("dd-next", "Next round");
+  else if (mine != null) h += '<div class="mgbig">' + DICE[mine - 1] + '</div><div class="mgs">Waiting for your partner to roll\u2026</div>';
+  else h += '<div class="mgbig">\u{1F3B2}</div>' + startBtn("dd-roll", "Roll");
+  return h;
+}
+MGACT["dd-new"] = () => set(mgRef("dd"), { r: R("dd") + 1 });
+MGACT["dd-next"] = () => set(mgRef("dd"), { r: R("dd") + 1, sc: (mg.dd || {}).sc || null });
+MGACT["dd-roll"] = () => mgTx("dd", (c) => {
+  c.d = c.d || {}; if (c.d[cid] != null) return false;
+  c.d[cid] = 1 + rnd(6);
+  const ks = Object.keys(c.d);
+  if (ks.length === 2) {
+    if (c.d[ks[0]] === c.d[ks[1]]) c.w = "draw";
+    else { c.w = c.d[ks[0]] > c.d[ks[1]] ? ks[0] : ks[1]; c.sc = c.sc || {}; c.sc[c.w] = (c.sc[c.w] || 0) + 1; }
+  }
+});
+
+/* 10) Math race */
+function mrMake() {
+  const op = ["+", "-", "\u00d7"][rnd(3)];
+  let a = 2 + rnd(30), b = 2 + rnd(20);
+  if (op === "\u00d7") { a = 2 + rnd(11); b = 2 + rnd(11); }
+  if (op === "-" && b > a) { const t = a; a = b; b = t; }
+  return { a, b, op, ans: op === "+" ? a + b : op === "-" ? a - b : a * b };
+}
+function mrHtml() {
+  const g = mg.mr;
+  if (!g || g.a == null) return '<div class="mgs">Same sum for both. First correct answer wins the point.</div>' + startBtn("mr-new", "Start");
+  let h = scoreLine(g.sc) + '<div class="mgbig">' + g.a + " " + g.op + " " + g.b + " = ?</div>";
+  if (g.w) h += '<div class="mgs"><b>' + (g.w === cid ? "You were first \u{1F389}" : "Partner was first") + " (answer " + g.ans + ")</b></div>" + startBtn("mr-new", "Next sum");
+  else h += '<input id="mrIn" type="number" inputmode="numeric" placeholder="answer">' + startBtn("mr-go", "Answer");
+  return h;
+}
+MGACT["mr-new"] = () => set(mgRef("mr"), Object.assign({ r: R("mr") + 1, sc: (mg.mr || {}).sc || null }, mrMake()));
+MGACT["mr-go"] = () => {
+  const g = mg.mr, v = parseInt(($("mrIn") || {}).value, 10);
+  if (!g || g.w || isNaN(v)) return;
+  if (v !== g.ans) { note("Not it, try again."); return; }
+  return mgTx("mr", (c) => { if (c.w) return false; c.w = cid; c.sc = c.sc || {}; c.sc[cid] = (c.sc[cid] || 0) + 1; });
+};
+
+/* game list */
+MGACT.back = () => { mgTab = null; mgRender(); };
+MGACT.open = (el) => { mgTab = el.dataset.g; mgRender(); };
+const MGAMES = {
+  rps: { i: "\u270A", n: "Rock Paper", h: rpsHtml }, ng: { i: "\u{1F522}", n: "Number Guess", h: ngHtml }, tr: { i: "\u26A1", n: "Tap Race", h: trHtml, live: true },
+  c4: { i: "\u{1F534}", n: "Connect 4", h: c4Html }, mm: { i: "\u{1F9E0}", n: "Memory", h: mmHtml }, hm: { i: "\u{1F520}", n: "Hangman", h: hmHtml },
+  wyr: { i: "\u{1F914}", n: "Would You Rather", h: wyrHtml }, tod: { i: "\u{1F608}", n: "Truth or Dare", h: todHtml }, oe: { i: "\u{1F522}", n: "Odd or Even", h: oeHtml },
+  rx: { i: "\u{1F6A6}", n: "Reaction Duel", h: rxHtml, live: true }, qz: { i: "\u2753", n: "Quick Quiz", h: qzHtml }, dd: { i: "\u{1F3B2}", n: "Dice Duel", h: ddHtml }, mr: { i: "\u2795", n: "Math Race", h: mrHtml }
+};
+function gridHtml() {
+  return '<div class="mgs">Pick a game. Your partner sees it live.</div><div class="mggrid">' +
+    Object.keys(MGAMES).map((k) => '<button data-a="open" data-g="' + k + '"><span>' + MGAMES[k].i + "</span>" + MGAMES[k].n + "</button>").join("") + "</div>";
 }
 
 /* ---------- long-press menu: reactions / copy / delete ---------- */
@@ -1557,10 +2786,11 @@ function openMsgMenu(key) {
     const b = document.createElement("button");
     b.type = "button"; b.textContent = e;
     if (mineRx === e) b.className = "sel";
-    b.addEventListener("click", () => {
+    b.addEventListener("click", async () => {
       closeMsgMenu();
       const p = ref(db, "rooms/" + room + "/" + key + "/rx/" + cid);
-      (mineRx === e ? remove(p) : set(p, e)).catch(() => note("Could not react."));
+      try { if (mineRx === e) await remove(p); else await set(p, await encStr(e)); }
+      catch (_) { note("Could not react."); }
     });
     emo.appendChild(b);
   });
@@ -1575,7 +2805,7 @@ function openMsgMenu(key) {
     b.type = "button"; b.textContent = "Delete"; b.className = "del";
     b.addEventListener("click", () => {
       closeMsgMenu();
-      update(ref(db, "rooms/" + room + "/" + key), { del: true, text: null, img: null, audio: null, loc: null, rx: null, w: null, h: null, dur: null, open: null })
+      update(ref(db, "rooms/" + room + "/" + key), { del: true, text: null, img: null, audio: null, video: null, loc: null, rx: null, w: null, h: null, dur: null, open: null })
         .catch(() => note("Could not delete."));
     });
     acts.appendChild(b);
@@ -1598,7 +2828,7 @@ $("msgMenuWrap").addEventListener("click", (e) => { if (e.target === $("msgMenuW
 /* ---------- menu + panels ---------- */
 function openPanel(id) { closeEmoji(); $("menuSheet").hidden = true; $(id).hidden = false; }
 function closeAllPanels() {
-  closeDraw(); closeTodo();
+  closeDraw(); closeTodo(); closeTouch(); closeCompass(); closeMG(); closeVidRec(); closeVidPlay(); $("moodSheet").hidden = true;
   $("gamePanel").hidden = true; $("setPanel").hidden = true;
   $("menuSheet").hidden = true; closeMsgMenu(); closeOnceVoice();
 }
@@ -1793,10 +3023,12 @@ function paintSeg(a, b) {
   dctx.beginPath(); dctx.moveTo(a[0], a[1]); dctx.lineTo(b[0] + (a[0] === b[0] && a[1] === b[1] ? 0.01 : 0), b[1]); dctx.stroke();
 }
 function ptsStr() { return dPts.map((p) => p[0] + "," + p[1]).join(" "); }
+let dChain = Promise.resolve();
 function dFlush() {
   dSendT = null; dLastSend = Date.now();
   if (!dCur) return;
-  set(ref(db, strokesPath() + "/" + dCur.key + "/p"), ptsStr()).catch(() => {});
+  const path = strokesPath() + "/" + dCur.key + "/p", pts = ptsStr();
+  dChain = dChain.then(async () => set(ref(db, path), await encStr(pts))).catch(() => {});
 }
 function dSchedule() {
   if (dSendT) return;
@@ -1808,7 +3040,8 @@ function dBegin(pt) {
   const r = push(ref(db, strokesPath()));
   dCur = r; dPts = [pt];
   dMine.push(r.key);
-  set(r, { c: dColor, w: dEraser ? dSize * 3 : dSize, e: dEraser ? 1 : 0, by: cid, p: ptsStr() }).catch(() => {});
+  { const st = { c: dColor, w: dEraser ? dSize * 3 : dSize, e: dEraser ? 1 : 0, by: cid }, pts0 = ptsStr();
+    dChain = dChain.then(async () => set(r, Object.assign(st, { p: await encStr(pts0) }))).catch(() => {}); }
   dLastSend = Date.now();
   paintSeg(pt, pt);
 }
@@ -1874,10 +3107,10 @@ function openDraw() {
   paintTools();
   requestAnimationFrame(() => { fitCanvas(); redrawAll(); });
   if (!dUnsub) {
-    dUnsub = onValue(ref(db, strokesPath()), (snap) => {
-      dStrokes = snap.val() || {};
+    dUnsub = onValue(ref(db, strokesPath()), ordered(decStrokes, (snap, v) => {
+      dStrokes = v || {};
       if (dActive) dPending = true; else redrawAll();
-    });
+    }));
   }
 }
 function closeDraw() {
@@ -2027,7 +3260,7 @@ function renderTodo() {
     ck.type = "button"; ck.className = "ck";
     ck.textContent = it.done ? "\u2705" : "\u2b1c";
     ck.setAttribute("aria-label", it.done ? "Mark as not done" : "Mark as done");
-    ck.addEventListener("click", () => update(ref(db, todoPath() + "/" + it.k), { done: !it.done, dby: it.done ? null : me }).catch(() => {}));
+    ck.addEventListener("click", async () => { try { await update(ref(db, todoPath() + "/" + it.k), { done: !it.done, dby: it.done ? null : await encStr(me) }); } catch (e) {} });
     const tt = document.createElement("div");
     tt.className = "tt";
     const sp = document.createElement("span"); sp.textContent = it.t || "";
@@ -2047,7 +3280,7 @@ function renderTodo() {
 function openTodo() {
   if (!roomRef) return;
   openPanel("todoPanel");
-  if (!todoUnsub) todoUnsub = onValue(ref(db, todoPath()), (snap) => { todo = snap.val() || {}; renderTodo(); });
+  if (!todoUnsub) todoUnsub = onValue(ref(db, todoPath()), ordered(decTodo, (snap, v) => { todo = v || {}; renderTodo(); }));
 }
 function closeTodo() {
   $("todoPanel").hidden = true;
@@ -2055,12 +3288,13 @@ function closeTodo() {
   todo = {};
 }
 $("tdClose").addEventListener("click", closeTodo);
-$("tdForm").addEventListener("submit", (e) => {
+$("tdForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const t = $("tdInput").value.trim().slice(0, 120);
   if (!t || !roomRef) return;
   $("tdInput").value = "";
-  push(ref(db, todoPath()), { t, by: me, done: false, ts: serverTimestamp() }).catch(() => note("Could not add that."));
+  try { await push(ref(db, todoPath()), { t: await encStr(t), by: await encStr(me), done: false, ts: serverTimestamp() }); }
+  catch (err) { note("Could not add that."); }
 });
 $("tdClear").addEventListener("click", () => {
   const upd = {};
@@ -2068,17 +3302,134 @@ $("tdClear").addEventListener("click", () => {
   if (Object.keys(upd).length) update(ref(db, todoPath()), upd).catch(() => {});
 });
 
-/* ---------- view once (photo / voice) ---------- */
+
+/* ---------- short video message (max 10 seconds) ---------- */
+const VID_MAX = 10;
+let vrStream = null, vrRec = null, vrChunks = [], vrStart = 0, vrTimer = null, vrFacing = "user", vrBlob = null, vrDur = 0, vrPrevUrl = "";
+function vrPickMime() {
+  if (!window.MediaRecorder) return "";
+  for (const t of ["video/webm;codecs=vp8,opus", "video/webm;codecs=vp9,opus", "video/webm", "video/mp4"]) if (MediaRecorder.isTypeSupported(t)) return t;
+  return "";
+}
+function camErrorText(e) { return micErrorText(e).replace(/microphone/gi, "camera and microphone"); }
+function vrStopStream() { if (vrStream) { vrStream.getTracks().forEach((t) => t.stop()); vrStream = null; } }
+async function vrOpenStream() {
+  vrStopStream();
+  vrStream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: vrFacing, width: { ideal: 480 }, height: { ideal: 640 }, frameRate: { ideal: 24, max: 30 } },
+    audio: { echoCancellation: true, noiseSuppression: true }
+  });
+  const lv = $("vrLive");
+  lv.srcObject = vrStream;
+  lv.style.transform = vrFacing === "user" ? "scaleX(-1)" : "none";
+  lv.play().catch(() => {});
+}
+function vrReset() {
+  clearInterval(vrTimer); vrTimer = null;
+  vrBlob = null;
+  if (vrPrevUrl) { URL.revokeObjectURL(vrPrevUrl); vrPrevUrl = ""; }
+  const pv = $("vrPrev"); pv.removeAttribute("src"); pv.hidden = true;
+  $("vrLive").hidden = false;
+  $("vrRec").hidden = false; $("vrRec").textContent = "\u25CF Record";
+  $("vrFlip").hidden = false; $("vrOnce").hidden = false;
+  $("vrSend").hidden = true; $("vrSend").disabled = false; $("vrRetake").hidden = true;
+  $("vrTime").textContent = "0:00 / 0:10";
+}
+async function openVidRec() {
+  if (!roomRef) return;
+  if (!window.MediaRecorder || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showHelp("Video message", "This browser cannot record video. Try Chrome or Safari."); return;
+  }
+  closeEmoji(); graceUntil = Date.now() + 180000;
+  try { await vrOpenStream(); } catch (e) { console.error(e); showHelp("Can't use the camera", camErrorText(e)); return; }
+  vrReset();
+  updateOnceUI();
+  $("vidRec").hidden = false;
+}
+function closeVidRec() {
+  clearInterval(vrTimer); vrTimer = null;
+  if (vrRec && vrRec.state !== "inactive") { vrRec.onstop = null; try { vrRec.stop(); } catch (e) {} }
+  vrRec = null;
+  vrStopStream();
+  $("vrLive").srcObject = null;
+  if (vrPrevUrl) { URL.revokeObjectURL(vrPrevUrl); vrPrevUrl = ""; }
+  vrBlob = null;
+  $("vidRec").hidden = true;
+}
+function vrStartRec() {
+  if (!vrStream) return;
+  vrChunks = [];
+  const mime = vrPickMime(), o = { videoBitsPerSecond: 350000, audioBitsPerSecond: 32000 };
+  if (mime) o.mimeType = mime;
+  try { vrRec = new MediaRecorder(vrStream, o); }
+  catch (e) { try { vrRec = new MediaRecorder(vrStream); } catch (e2) { showHelp("Video message", "This browser cannot record video."); return; } }
+  vrRec.ondataavailable = (e) => { if (e.data && e.data.size) vrChunks.push(e.data); };
+  vrRec.onstop = vrOnStop;
+  vrRec.start();
+  vrStart = Date.now();
+  $("vrRec").textContent = "\u25A0 Stop";
+  $("vrFlip").hidden = true; $("vrOnce").hidden = true;
+  vrTimer = setInterval(() => {
+    const sec = (Date.now() - vrStart) / 1000;
+    $("vrTime").textContent = fmtDur(Math.floor(sec)) + " / 0:10";
+    if (sec >= VID_MAX) vrStopRec();
+  }, 200);
+}
+function vrStopRec() { clearInterval(vrTimer); vrTimer = null; if (vrRec && vrRec.state !== "inactive") vrRec.stop(); }
+function vrOnStop() {
+  vrDur = Math.min(VID_MAX, Math.round((Date.now() - vrStart) / 1000));
+  const base = (((vrRec && vrRec.mimeType) || "video/webm").split(";")[0]) || "video/webm";
+  vrBlob = new Blob(vrChunks, { type: base });
+  vrStopStream();
+  if (vrDur < 1) { note("Video too short."); openVidRec(); return; }
+  vrPrevUrl = URL.createObjectURL(vrBlob);
+  const pv = $("vrPrev"); pv.src = vrPrevUrl; pv.hidden = false;
+  $("vrLive").hidden = true;
+  $("vrRec").hidden = true; $("vrFlip").hidden = true; $("vrOnce").hidden = false;
+  $("vrSend").hidden = false; $("vrRetake").hidden = false;
+  $("vrTime").textContent = "Preview \u00b7 " + vrDur + "s";
+}
+async function vrSend() {
+  if (!vrBlob) return;
+  $("vrSend").disabled = true;
+  let url;
+  try { url = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(vrBlob); }); }
+  catch (e) { $("vrSend").disabled = false; note("Could not read the video."); return; }
+  if (url.length > 3000000) { note("Video too big. Record a shorter one."); $("vrSend").disabled = false; return; }
+  const dur = vrDur;
+  closeVidRec();
+  $("status").textContent = "Sending video...";
+  await sendMsg(Object.assign({ video: url, dur }, onceNext ? { once: true, ot: "video" } : {}));
+  resetOnce();
+}
+$("vidBtn").addEventListener("click", openVidRec);
+$("vrRec").addEventListener("click", () => { if (vrRec && vrRec.state === "recording") vrStopRec(); else vrStartRec(); });
+$("vrFlip").addEventListener("click", async () => {
+  vrFacing = vrFacing === "user" ? "environment" : "user";
+  try { await vrOpenStream(); } catch (e) { vrFacing = vrFacing === "user" ? "environment" : "user"; try { await vrOpenStream(); } catch (e2) {} note("Could not switch camera."); }
+});
+$("vrOnce").addEventListener("click", () => { onceNext = !onceNext; updateOnceUI(); });
+$("vrRetake").addEventListener("click", async () => { vrReset(); try { await vrOpenStream(); } catch (e) { closeVidRec(); showHelp("Can't use the camera", camErrorText(e)); } });
+$("vrSend").addEventListener("click", vrSend);
+$("vrCancel").addEventListener("click", () => { closeVidRec(); resetOnce(); });
+
+/* ---------- view once (photo / voice / video) ---------- */
 let onceNext = false;
 function updateOnceUI() {
   $("pvOnce").textContent = "View once: " + (onceNext ? "On" : "Off");
   $("pvOnce").classList.toggle("on", onceNext);
   $("recOnce").textContent = onceNext ? "1\u00d7 On" : "1\u00d7 Off";
   $("recOnce").classList.toggle("on", onceNext);
+  $("vrOnce").textContent = onceNext ? "1\u00d7 On" : "1\u00d7 Off";
+  $("vrOnce").classList.toggle("on", onceNext);
 }
 function resetOnce() { onceNext = false; updateOnceUI(); }
 $("pvOnce").addEventListener("click", () => { onceNext = !onceNext; updateOnceUI(); });
 $("recOnce").addEventListener("click", () => { onceNext = !onceNext; updateOnceUI(); });
+const ONCE = { audio: ["\ud83c\udfa4", "Voice message", "voice message", "Tap to play"], video: ["\ud83c\udfac", "Video", "video", "Tap to play"], img: ["\ud83d\udcf7", "Photo", "photo", "Tap to view"] };
+const onceI = (t) => ONCE[t] || ONCE.img;
+function closeVidPlay() { const pv = $("vidPlayEl"); try { pv.pause(); } catch (e) {} pv.removeAttribute("src"); $("vidPlay").hidden = true; }
+$("vidPlayClose").addEventListener("click", closeVidPlay);
 function closeOnceVoice() {
   const a = $("onceAudio");
   try { a.pause(); } catch (e) {}
@@ -2094,18 +3445,24 @@ async function openOnce(key) {
     res = await runTransaction(ref(db, "rooms/" + room + "/" + key), (cur) => {
       got = null;
       if (!cur || !cur.once || cur.vd) return;
-      got = { img: cur.img, audio: cur.audio };
-      cur.vd = true; cur.img = null; cur.audio = null; cur.w = null; cur.h = null; cur.dur = null;
+      got = { img: cur.img, audio: cur.audio, video: cur.video };
+      cur.vd = true; cur.img = null; cur.audio = null; cur.video = null; cur.w = null; cur.h = null; cur.dur = null;
       return cur;
     });
   } catch (e) { note("Could not open. Check your internet."); return; }
   if (!res.committed || !got) { note("Already opened."); return; }
+  got.img = await decStr(got.img); got.audio = await decStr(got.audio); got.video = await decStr(got.video);
   if (typeof got.img === "string" && got.img.startsWith("data:image/")) openViewer(got.img);
   else if (typeof got.audio === "string" && got.audio.startsWith("data:audio/")) {
     const a = $("onceAudio");
     a.src = got.audio;
     $("onceVoice").hidden = false;
     a.play().catch(() => {});
+  } else if (typeof got.video === "string" && got.video.startsWith("data:video/")) {
+    const pv = $("vidPlayEl");
+    pv.src = got.video;
+    $("vidPlay").hidden = false;
+    pv.play().catch(() => {});
   } else note("Nothing to show.");
 }
 updateOnceUI();
@@ -2122,6 +3479,8 @@ function isStandalone() { return window.navigator.standalone === true || (window
 function micErrorText(e) {
   const n = (e && e.name) || "Error";
   if (!window.isSecureContext || !navigator.mediaDevices) return "This page is not on https, so the browser blocks the microphone. Open your https website link (not a file).";
+  let framed = false; try { framed = window.self !== window.top; } catch (e) { framed = true; }
+  if (framed) return "This page is running inside another page (an embedded frame), and that frame does not allow the microphone. Open the website link directly in Chrome, not inside another site or app. (Error: " + n + ")";
   if (inAppBrowser()) return "You opened this inside another app (Messenger, Facebook, Instagram...). Those apps block the microphone. Open the menu and choose Open in Chrome (or Safari).";
   if (n === "NotAllowedError" || n === "PermissionDeniedError" || n === "SecurityError") {
     return "The microphone is blocked for this website.\n\nChrome: tap the lock icon next to the address, then Permissions, Microphone, Allow, then reload.\n\niPhone: Settings, Safari, Microphone, set to Allow or Ask.\n\nAlso check phone Settings, Apps, your browser, Permissions, Microphone." +
@@ -2212,8 +3571,9 @@ renderSettings();
 // Restore previous session
 const savedName = safeGet("chat.name"), savedRoom = safeGet("chat.room");
 $("name").value = savedName;
-if (savedName && savedRoom) { me = savedName; room = savedRoom; enterRoom(); }
-else { show("join"); }
+$("room").value = savedRoom;
+show("join");
+if (savedName && savedRoom) setTimeout(() => { try { $("pass").focus(); } catch (e) {} }, 100);
 </script>
 </body>
 </html>
