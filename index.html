@@ -1462,6 +1462,9 @@ const cid = (() => {
 const callCid = Math.random().toString(36).slice(2) + Date.now().toString(36); // per page load, so two tabs can call each other
 // Optional: put your own TURN server(s) here for the most reliable calls, e.g.
 // [{ urls: ["turn:HOST:80","turn:HOST:443?transport=tcp","turns:HOST:443?transport=tcp"], username: "USER", credential: "PASS" }]
+// true = every call goes through the TURN relay first (works on almost every network, uses Metered quota).
+// If the relay path does not connect, the app automatically retries with direct connection too.
+const FORCE_RELAY = true;
 const EXTRA_TURN = [
   { urls: "stun:stun.relay.metered.ca:80" },
   { urls: [
@@ -1497,6 +1500,7 @@ const ICE = {
       ], username: "openrelayproject", credential: "openrelayproject" },
     { urls: ["turn:freestun.net:3478", "turn:freestun.net:5349"], username: "free", credential: "free" }
   ].concat(typeof EXTRA_TURN !== "undefined" ? EXTRA_TURN : []),
+  iceTransportPolicy: FORCE_RELAY ? "relay" : "all",
   iceCandidatePoolSize: 8,
   bundlePolicy: "max-bundle",
   rtcpMuxPolicy: "require"
@@ -1630,7 +1634,7 @@ function finishCall(msg, removeNode) {
   callPhase = "idle";
   stopRing();
   clearTimeout(noAnswerTimer); clearTimeout(connTimer);
-  clearInterval(callTimer);
+  clearInterval(callTimer); clearInterval(dbgTimer); if (dbgEl) dbgEl.textContent = "";
   if (pc) { try { pc.close(); } catch (e) {} pc = null; }
   if (localStream) { localStream.getTracks().forEach((t) => t.stop()); localStream = null; }
   $("remoteAudio").srcObject = null;
@@ -1705,7 +1709,7 @@ function tryReconnect() {
   setReconnecting(true);
   reTries += 1;
   // after 2 failed tries, force the relay (TURN) path: it works through almost any NAT/firewall
-  if (reTries >= 3) { try { pc.setConfiguration(Object.assign({}, ICE, { iceTransportPolicy: "relay" })); } catch (e) {} }
+  if (reTries >= 3) { try { pc.setConfiguration(Object.assign({}, ICE, { iceTransportPolicy: FORCE_RELAY ? "all" : "relay" })); } catch (e) {} }
   if (isCaller) callerRestart(); else calleeRequestRestart();
   clearTimeout(reTimer);
   // keep trying every 7 seconds until it works (or gives up after 45 s)
@@ -1752,8 +1756,30 @@ window.addEventListener("offline", () => { if (callPhase === "active") setReconn
 if (navigator.connection && navigator.connection.addEventListener) navigator.connection.addEventListener("change", onNetChange);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && callPhase === "active" && pc && pc.connectionState !== "connected") tryReconnect(); });
 
+let dbgEl = null, dbgTimer = null, iceErr = "";
+function candCount(sdp) {
+  const c = { host: 0, srflx: 0, relay: 0 };
+  String(sdp || "").split("\n").forEach((l) => { if (l.indexOf("a=candidate") === 0) { const m = l.match(/ typ (host|srflx|relay)/); if (m) c[m[1]]++; } });
+  return c;
+}
+function dbgTick() {
+  if (!dbgEl) {
+    dbgEl = document.createElement("div");
+    dbgEl.style.cssText = "font:11px/1.5 monospace;opacity:.75;margin-top:6px;max-width:92vw;text-align:center;white-space:pre-line;color:#fff;position:relative;z-index:3";
+    $("callSub").insertAdjacentElement("afterend", dbgEl);
+  }
+  if (!pc || (callPhase !== "connecting" && callPhase !== "calling")) { dbgEl.textContent = ""; return; }
+  const l = candCount(pc.localDescription && pc.localDescription.sdp), r = candCount(pc.remoteDescription && pc.remoteDescription.sdp);
+  dbgEl.textContent = "build d4 | conn " + pc.connectionState + " | ice " + pc.iceConnectionState + " | gather " + pc.iceGatheringState +
+    "\nme  host" + l.host + " srflx" + l.srflx + " relay" + l.relay + "\nthem host" + r.host + " srflx" + r.srflx + " relay" + r.relay +
+    (iceErr ? "\nTURN/STUN error: " + iceErr : "");
+}
+
 function makePc(stream) {
   pc = new RTCPeerConnection(ICE);
+  iceErr = "";
+  try { pc.onicecandidateerror = (e) => { if (e && e.errorCode && e.errorCode !== 701) iceErr = e.errorCode + " " + String(e.url || "").replace(/^turns?:|^stuns?:/, "").slice(0, 34); else if (e && e.errorCode === 701 && !iceErr) iceErr = "701 unreachable " + String(e.url || "").replace(/^turns?:|^stuns?:/, "").slice(0, 28); }; } catch (e) {}
+  clearInterval(dbgTimer); dbgTimer = setInterval(dbgTick, 1000);
   stream.getTracks().forEach((t) => { try { t.contentHint = t.kind === "audio" ? "speech" : "motion"; } catch (e) {} pc.addTrack(t, stream); });
   if (stream.getVideoTracks().length) { const lv = $("localVideo"); lv.srcObject = stream; lv.style.transform = camFacing === "user" ? "scaleX(-1)" : "none"; lv.play().catch(() => {}); }
   pc.getSenders().forEach((snd) => {
@@ -4174,5 +4200,6 @@ $("attachInput").addEventListener("change", async () => {
   } catch (e) { console.error(e); $("status").textContent = "Could not send that. Try again."; }
 });
 </script>
+<div style="position:fixed;bottom:2px;left:4px;font:10px monospace;opacity:.55;z-index:1;pointer-events:none;color:#888">build d4</div>
 </body>
 </html>
